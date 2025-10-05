@@ -576,13 +576,26 @@
         showNotice: function(message, type) {
             type = type || 'info';
 
+            // Remove existing notices
+            $('.gsap-wp-editor-notice').remove();
+
             const $notice = $('<div>')
-                .addClass('notice notice-' + type + ' is-dismissible')
-                .html('<p>' + message + '</p>')
+                .addClass('gsap-wp-editor-notice notice notice-' + type + ' is-dismissible')
+                .html('<p><strong>' + message + '</strong></p>')
                 .hide();
 
+            // Insert before the editor layout
             $('.gsap-wp-file-editor').prepend($notice);
             $notice.fadeIn(200);
+
+            // Make dismissible
+            $notice.append('<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>');
+
+            $notice.on('click', '.notice-dismiss', function() {
+                $notice.fadeOut(200, function() {
+                    $(this).remove();
+                });
+            });
 
             // Auto dismiss after 5 seconds
             setTimeout(function() {

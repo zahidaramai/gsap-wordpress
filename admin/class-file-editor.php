@@ -445,7 +445,7 @@ class GSAP_WP_File_Editor {
     public function ajax_save_file() {
         // Verify nonce and capabilities
         if (!wp_verify_nonce($_POST['nonce'], 'gsap_wp_ajax_nonce') || !$this->can_edit_files()) {
-            wp_die(__('Security check failed.', 'gsap-for-wordpress'));
+            wp_send_json_error(__('Security check failed.', 'gsap-for-wordpress'));
         }
 
         // Rate limiting
@@ -456,7 +456,9 @@ class GSAP_WP_File_Editor {
             }
         }
 
-        $file_name = sanitize_file_name($_POST['file']);
+        // Sanitize file path (preserve directory separator)
+        $file_name = sanitize_text_field($_POST['file']);
+        $file_name = str_replace(array('..', '\\'), array('', '/'), $file_name);
         $content = $_POST['content'];
 
         // Validate file
@@ -506,10 +508,12 @@ class GSAP_WP_File_Editor {
      */
     public function ajax_load_file() {
         if (!wp_verify_nonce($_POST['nonce'], 'gsap_wp_ajax_nonce') || !$this->can_edit_files()) {
-            wp_die(__('Security check failed.', 'gsap-for-wordpress'));
+            wp_send_json_error(__('Security check failed.', 'gsap-for-wordpress'));
         }
 
-        $file_name = sanitize_file_name($_POST['file']);
+        // Sanitize file path (preserve directory separator)
+        $file_name = sanitize_text_field($_POST['file']);
+        $file_name = str_replace(array('..', '\\'), array('', '/'), $file_name);
 
         if (!isset($this->editable_files[$file_name])) {
             wp_send_json_error(__('Invalid file.', 'gsap-for-wordpress'));
@@ -529,10 +533,12 @@ class GSAP_WP_File_Editor {
      */
     public function ajax_reset_file() {
         if (!wp_verify_nonce($_POST['nonce'], 'gsap_wp_ajax_nonce') || !$this->can_edit_files()) {
-            wp_die(__('Security check failed.', 'gsap-for-wordpress'));
+            wp_send_json_error(__('Security check failed.', 'gsap-for-wordpress'));
         }
 
-        $file_name = sanitize_file_name($_POST['file']);
+        // Sanitize file path (preserve directory separator)
+        $file_name = sanitize_text_field($_POST['file']);
+        $file_name = str_replace(array('..', '\\'), array('', '/'), $file_name);
 
         if (!isset($this->editable_files[$file_name])) {
             wp_send_json_error(__('Invalid file.', 'gsap-for-wordpress'));

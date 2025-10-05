@@ -3,7 +3,7 @@
  * Plugin Name: GSAP for WordPress
  * Plugin URI: https://zahidaramai.com/gsap-for-wordpress
  * Description: Complete GSAP integration with admin interface, file editor, and version control system. Create stunning animations with ease.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Zahid Aramai
  * Author URI: https://zahidaramai.com
  * License: GPL v2 or later
@@ -16,7 +16,7 @@
  * Network: false
  *
  * @package GSAP_For_WordPress
- * @version 1.0.0
+ * @version 1.0.2
  * @author Zahid Aramai
  */
 
@@ -26,7 +26,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('GSAP_WP_VERSION', '1.0.0');
+define('GSAP_WP_VERSION', '1.0.2');
 define('GSAP_WP_PLUGIN_FILE', __FILE__);
 define('GSAP_WP_PLUGIN_BASENAME', plugin_basename(__FILE__));
 define('GSAP_WP_PLUGIN_PATH', plugin_dir_path(__FILE__));
@@ -172,7 +172,8 @@ final class GSAP_For_WordPress {
 
         // Admin hooks
         if (is_admin()) {
-            add_action('admin_init', array($this, 'admin_init'));
+            // Initialize admin classes early so form handlers work
+            add_action('plugins_loaded', array($this, 'init_admin_classes'), 5);
             add_action('admin_menu', array($this, 'admin_menu'));
             add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
         }
@@ -258,11 +259,11 @@ final class GSAP_For_WordPress {
     }
 
     /**
-     * Initialize admin
+     * Initialize admin classes
      *
      * @since 1.0.0
      */
-    public function admin_init() {
+    public function init_admin_classes() {
         if (class_exists('GSAP_WP_Admin')) {
             GSAP_WP_Admin::get_instance();
         }
