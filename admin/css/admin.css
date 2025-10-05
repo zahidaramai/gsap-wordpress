@@ -445,8 +445,9 @@
 .gsap-wp-code-editor {
     flex: 1;
     width: 100%;
+    min-height: 50vh;
     border: none;
-    resize: none;
+    resize: vertical;
     font-family: 'Monaco', 'Consolas', 'Liberation Mono', monospace;
     font-size: 13px;
     line-height: 1.6;

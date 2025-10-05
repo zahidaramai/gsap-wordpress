@@ -53,15 +53,27 @@ class GSAP_WP_Settings {
      * Constructor
      */
     private function __construct() {
-        $this->load_settings();
         $this->init_library_definitions();
+        $this->load_settings();
     }
 
     /**
      * Load current settings
      */
     private function load_settings() {
+        // Always get fresh data from database
         $this->settings = get_option('gsap_wp_settings', array());
+
+        // Ensure proper structure
+        if (!isset($this->settings['libraries'])) {
+            $this->settings['libraries'] = array();
+        }
+        if (!isset($this->settings['performance'])) {
+            $this->settings['performance'] = array();
+        }
+        if (!isset($this->settings['conditional_loading'])) {
+            $this->settings['conditional_loading'] = array();
+        }
     }
 
     /**
@@ -281,6 +293,10 @@ class GSAP_WP_Settings {
      * Render settings content
      */
     public function render_content() {
+        // Debug output (visible in page source only)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            echo '<!-- GSAP Settings Debug: ' . print_r($this->settings, true) . ' -->';
+        }
         ?>
         <div class="gsap-wp-settings">
             <form method="post" action="" class="gsap-wp-settings-form">
@@ -339,10 +355,20 @@ class GSAP_WP_Settings {
      * @param array $library
      */
     private function render_library_option($library_key, $library) {
-        $is_enabled = isset($this->settings['libraries'][$library_key]) ? $this->settings['libraries'][$library_key] : false;
+        // Check if library is enabled in settings
+        $is_enabled = false;
+        if (isset($this->settings['libraries'][$library_key])) {
+            $is_enabled = (bool) $this->settings['libraries'][$library_key];
+        }
+
         $is_required = isset($library['required']) ? $library['required'] : false;
         $is_premium = !$library['free'];
         $has_dependencies = isset($library['dependencies']) && !empty($library['dependencies']);
+
+        // Required libraries are always enabled
+        if ($is_required) {
+            $is_enabled = true;
+        }
 
         $classes = array('gsap-wp-library-option');
         if ($is_premium) {
@@ -351,13 +377,16 @@ class GSAP_WP_Settings {
         if ($is_required) {
             $classes[] = 'required';
         }
+        if ($is_enabled) {
+            $classes[] = 'enabled';
+        }
         ?>
         <div class="<?php echo implode(' ', $classes); ?>">
             <label class="gsap-wp-checkbox-label">
                 <input type="checkbox"
                        name="gsap_libraries[<?php echo esc_attr($library_key); ?>]"
                        value="1"
-                       <?php checked($is_enabled || $is_required); ?>
+                       <?php checked($is_enabled, true); ?>
                        <?php disabled($is_required); ?>
                        <?php if ($has_dependencies): ?>
                            data-dependencies="<?php echo esc_attr(implode(',', $library['dependencies'])); ?>"

@@ -296,14 +296,6 @@ class GSAP_WP_Admin {
         // Clear any cached data
         $this->clear_cache();
 
-        // Set success message
-        add_settings_error(
-            'gsap_wp_settings',
-            'settings_updated',
-            __('Settings saved successfully!', 'gsap-for-wordpress'),
-            'updated'
-        );
-
         // Log the settings change
         if (class_exists('GSAP_WP_Security')) {
             GSAP_WP_Security::get_instance()->log_security_event(
@@ -315,6 +307,22 @@ class GSAP_WP_Admin {
 
         // Trigger action for other plugins
         do_action('gsap_wp_settings_updated', $new_settings, $current_settings);
+
+        // Set transient for success message (to survive redirect)
+        set_transient('gsap_wp_settings_updated', true, 30);
+
+        // Redirect to avoid form resubmission
+        $redirect_url = add_query_arg(
+            array(
+                'page' => 'gsap-wordpress',
+                'tab' => 'settings',
+                'settings-updated' => 'true'
+            ),
+            admin_url('admin.php')
+        );
+
+        wp_safe_redirect($redirect_url);
+        exit;
     }
 
     /**
@@ -324,6 +332,18 @@ class GSAP_WP_Admin {
         // Only show on plugin pages
         if (!isset($_GET['page']) || $_GET['page'] !== 'gsap-wordpress') {
             return;
+        }
+
+        // Show settings saved message
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
+            if (get_transient('gsap_wp_settings_updated')) {
+                ?>
+                <div class="notice notice-success is-dismissible">
+                    <p><strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong></p>
+                </div>
+                <?php
+                delete_transient('gsap_wp_settings_updated');
+            }
         }
 
         settings_errors('gsap_wp_settings');
