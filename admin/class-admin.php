@@ -113,6 +113,11 @@ class GSAP_WP_Admin {
                 <span class="title-count"><?php echo esc_html(GSAP_WP_VERSION); ?></span>
             </h1>
 
+            <hr class="wp-header-end">
+
+            <!-- Display admin notices -->
+            <?php settings_errors('gsap_wp_settings'); ?>
+
             <!-- Friendly instruction box with pastel background -->
             <div class="gsap-wp-instruction-box">
                 <div class="gsap-wp-instruction-content">
@@ -124,8 +129,6 @@ class GSAP_WP_Admin {
             <?php if (isset($this->tabs[$current_tab]['description'])): ?>
                 <p class="description"><?php echo esc_html($this->tabs[$current_tab]['description']); ?></p>
             <?php endif; ?>
-
-            <hr class="wp-header-end">
 
             <?php $this->render_tab_navigation(); ?>
 

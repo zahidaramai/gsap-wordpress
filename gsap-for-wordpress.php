@@ -274,6 +274,7 @@ final class GSAP_For_WordPress {
      * @since 1.0.0
      */
     public function admin_menu() {
+        // Main menu page with tab-based navigation
         add_menu_page(
             __('GSAP for WordPress', 'gsap-for-wordpress'),
             __('GSAP', 'gsap-for-wordpress'),
@@ -284,22 +285,14 @@ final class GSAP_For_WordPress {
             30
         );
 
+        // This ensures the menu is properly highlighted
         add_submenu_page(
             'gsap-wordpress',
-            __('Settings', 'gsap-for-wordpress'),
-            __('Settings', 'gsap-for-wordpress'),
+            __('GSAP for WordPress', 'gsap-for-wordpress'),
+            __('Dashboard', 'gsap-for-wordpress'),
             'manage_options',
             'gsap-wordpress',
             array($this, 'admin_page')
-        );
-
-        add_submenu_page(
-            'gsap-wordpress',
-            __('Customize', 'gsap-for-wordpress'),
-            __('Customize', 'gsap-for-wordpress'),
-            'manage_options',
-            'gsap-wordpress-customize',
-            array($this, 'customize_page')
         );
     }
 
@@ -337,6 +330,7 @@ final class GSAP_For_WordPress {
             return;
         }
 
+        // Common admin styles
         wp_enqueue_style(
             'gsap-wp-admin',
             GSAP_WP_ADMIN_URL . 'css/admin.css',
@@ -344,6 +338,7 @@ final class GSAP_For_WordPress {
             GSAP_WP_VERSION
         );
 
+        // Common admin scripts
         wp_enqueue_script(
             'gsap-wp-admin',
             GSAP_WP_ADMIN_URL . 'js/admin.js',
@@ -352,39 +347,81 @@ final class GSAP_For_WordPress {
             true
         );
 
+        // Check if we're on customize tab
+        $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'settings';
+
+        if ($current_tab === 'customize') {
+            // Editor styles
+            wp_enqueue_style(
+                'gsap-wp-editor',
+                GSAP_WP_ADMIN_URL . 'css/editor.css',
+                array('gsap-wp-admin'),
+                GSAP_WP_VERSION
+            );
+
+            // Editor scripts
+            wp_enqueue_script(
+                'gsap-wp-editor',
+                GSAP_WP_ADMIN_URL . 'js/editor.js',
+                array('jquery', 'gsap-wp-admin'),
+                GSAP_WP_VERSION,
+                true
+            );
+
+            // Version control scripts
+            wp_enqueue_script(
+                'gsap-wp-version-control',
+                GSAP_WP_ADMIN_URL . 'js/version-control.js',
+                array('jquery', 'gsap-wp-admin'),
+                GSAP_WP_VERSION,
+                true
+            );
+        }
+
         // Localize script for AJAX
         wp_localize_script('gsap-wp-admin', 'gsapWpAjax', array(
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('gsap_wp_ajax_nonce'),
+            'version' => GSAP_WP_VERSION,
             'strings' => array(
                 'saving' => __('Saving...', 'gsap-for-wordpress'),
                 'saved' => __('Saved!', 'gsap-for-wordpress'),
                 'error' => __('Error occurred. Please try again.', 'gsap-for-wordpress'),
-                'confirm_reset' => __('Are you sure you want to reset? This action cannot be undone.', 'gsap-for-wordpress')
+                'confirm_reset' => __('Are you sure you want to reset? This action cannot be undone.', 'gsap-for-wordpress'),
+                'no_libraries_selected' => __('Please select at least one library.', 'gsap-for-wordpress'),
+                'premium_warning' => __('The %s library requires a Club GreenSock membership. Do you have a license?', 'gsap-for-wordpress')
             )
         ));
     }
 
     /**
-     * Admin settings page
+     * Admin main page with tabs
      *
      * @since 1.0.0
      */
     public function admin_page() {
-        if (class_exists('GSAP_WP_Settings')) {
-            GSAP_WP_Settings::get_instance()->render_page();
+        if (!class_exists('GSAP_WP_Admin')) {
+            return;
         }
-    }
 
-    /**
-     * Admin customize page
-     *
-     * @since 1.0.0
-     */
-    public function customize_page() {
-        if (class_exists('GSAP_WP_File_Editor')) {
-            GSAP_WP_File_Editor::get_instance()->render_page();
+        $admin = GSAP_WP_Admin::get_instance();
+        $current_tab = $admin->get_current_tab();
+
+        // Render page with tab navigation
+        $admin->render_header();
+
+        // Render content based on current tab
+        if ($current_tab === 'settings') {
+            if (class_exists('GSAP_WP_Settings')) {
+                GSAP_WP_Settings::get_instance()->render_content();
+            }
+        } elseif ($current_tab === 'customize') {
+            if (class_exists('GSAP_WP_File_Editor')) {
+                GSAP_WP_File_Editor::get_instance()->render_content();
+            }
         }
+
+        $admin->render_footer();
     }
 
     /**
