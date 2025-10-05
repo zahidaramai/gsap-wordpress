@@ -1,0 +1,34 @@
+/**
+ * GSAP Animation Styles
+ *
+ * This file contains your custom CSS styles for GSAP animations.
+ * Edit this file through the GSAP > Customize tab in your WordPress admin.
+ *
+ * @package GSAP_For_WordPress
+ */
+
+/* Base Animation Classes */
+.fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    will-change: opacity, transform;
+}
+
+.scroll-animate {
+    opacity: 0;
+    transform: translateY(50px);
+    will-change: opacity, transform;
+}
+
+.parallax-element {
+    will-change: transform;
+}
+
+/* GPU Acceleration */
+.gsap-3d {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Your custom styles here... */

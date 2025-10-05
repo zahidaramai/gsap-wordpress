@@ -25,6 +25,37 @@
 }
 
 /* ==========================================================================
+   Instruction Box
+   ========================================================================== */
+
+.gsap-wp-instruction-box {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+    border: 1px solid #d1e7ff;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin: 15px 0;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.gsap-wp-instruction-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gsap-wp-instruction-content .dashicons {
+    color: #0073aa;
+    font-size: 20px;
+}
+
+.gsap-wp-instruction-content p {
+    margin: 0;
+    color: #1e293b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
    Tab Navigation
    ========================================================================== */
 

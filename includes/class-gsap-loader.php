@@ -323,27 +323,27 @@ class GSAP_WP_GSAP_Loader {
      * Enqueue custom user files
      */
     private function enqueue_custom_files() {
-        $upload_dir = wp_upload_dir();
-        $base_url = $upload_dir['baseurl'] . '/gsap-wordpress/';
-        $base_path = $upload_dir['basedir'] . '/gsap-wordpress/';
+        // Use plugin assets directory
+        $base_url = GSAP_WP_ASSETS_URL;
+        $base_path = GSAP_WP_PLUGIN_PATH . 'assets/';
 
         // Enqueue custom CSS
-        $css_file = $base_path . 'animation.css';
+        $css_file = $base_path . 'css/animation.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
                 'gsap-wp-custom-css',
-                $base_url . 'animation.css',
+                $base_url . 'css/animation.css',
                 array(),
                 filemtime($css_file)
             );
         }
 
         // Enqueue custom JS
-        $js_file = $base_path . 'global.js';
+        $js_file = $base_path . 'js/global.js';
         if (file_exists($js_file)) {
             wp_enqueue_script(
                 'gsap-wp-custom-js',
-                $base_url . 'global.js',
+                $base_url . 'js/global.js',
                 array('gsap-gsap_core'),
                 filemtime($js_file),
                 true
@@ -586,13 +586,25 @@ class GSAP_WP_GSAP_Loader {
      * Output GSAP configuration script
      */
     private function output_gsap_config() {
+        $enabled_libraries = $this->get_enabled_libraries();
         ?>
         <script type="text/javascript">
         /* GSAP WordPress Configuration */
         if (typeof gsap !== 'undefined') {
             // Set default GSAP configuration
-            <?php if (GSAP_WP_DEBUG): ?>
-            console.log('GSAP for WordPress v<?php echo GSAP_WP_VERSION; ?> loaded');
+            console.log('🎬 GSAP for WordPress v<?php echo GSAP_WP_VERSION; ?> loaded successfully!');
+            
+            // Log activated libraries
+            <?php if (!empty($enabled_libraries)): ?>
+            console.log('📚 Activated GSAP Libraries:');
+            <?php foreach ($enabled_libraries as $library): ?>
+                <?php if (isset($this->library_definitions[$library])): ?>
+                    <?php $lib_info = $this->library_definitions[$library]; ?>
+                    console.log('  ✅ <?php echo esc_js($library); ?> (<?php echo esc_js($lib_info['file']); ?>)');
+                <?php endif; ?>
+            <?php endforeach; ?>
+            <?php else: ?>
+            console.log('⚠️ No GSAP libraries are currently activated. Please enable libraries in the plugin settings.');
             <?php endif; ?>
 
             // Custom GSAP defaults
@@ -603,10 +615,16 @@ class GSAP_WP_GSAP_Loader {
 
             // Refresh ScrollTrigger on window resize
             if (typeof ScrollTrigger !== 'undefined') {
+                console.log('🔄 ScrollTrigger auto-refresh enabled');
                 window.addEventListener('resize', function() {
                     ScrollTrigger.refresh();
                 });
             }
+
+            // Log when GSAP is ready
+            console.log('🚀 GSAP is ready for animations! Start creating amazing effects.');
+        } else {
+            console.error('❌ GSAP failed to load. Please check your plugin settings.');
         }
         </script>
         <?php

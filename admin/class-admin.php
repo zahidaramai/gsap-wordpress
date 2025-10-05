@@ -70,7 +70,7 @@ class GSAP_WP_Admin {
             ),
             'customize' => array(
                 'title' => __('Customize', 'gsap-for-wordpress'),
-                'description' => __('Edit custom GSAP animations and styles', 'gsap-for-wordpress'),
+                'description' => __('Edit custom GSAP animations and styles using our professional code editor with version control and syntax highlighting', 'gsap-for-wordpress'),
                 'capability' => 'edit_themes',
                 'callback' => array($this, 'render_customize_tab')
             )
@@ -112,6 +112,14 @@ class GSAP_WP_Admin {
                 <?php echo esc_html(get_admin_page_title()); ?>
                 <span class="title-count"><?php echo esc_html(GSAP_WP_VERSION); ?></span>
             </h1>
+
+            <!-- Friendly instruction box with pastel background -->
+            <div class="gsap-wp-instruction-box">
+                <div class="gsap-wp-instruction-content">
+                    <span class="dashicons dashicons-lightbulb"></span>
+                    <p><?php _e('Welcome to GSAP for WordPress! Use the <strong>Settings</strong> tab to activate animation libraries, and the <strong>Customize</strong> tab to edit your custom animations and styles with our built-in code editor featuring syntax highlighting and version control.', 'gsap-for-wordpress'); ?></p>
+                </div>
+            </div>
 
             <?php if (isset($this->tabs[$current_tab]['description'])): ?>
                 <p class="description"><?php echo esc_html($this->tabs[$current_tab]['description']); ?></p>

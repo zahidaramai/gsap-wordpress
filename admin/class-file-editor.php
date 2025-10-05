@@ -69,8 +69,16 @@ class GSAP_WP_File_Editor {
      * Initialize upload directory
      */
     private function init_upload_dir() {
-        $upload_dir = wp_upload_dir();
-        $this->upload_dir = $upload_dir['basedir'] . '/gsap-wordpress/';
+        // Use plugin assets directory instead of uploads
+        $this->upload_dir = GSAP_WP_PLUGIN_PATH . 'assets/';
+
+        // Ensure directories exist
+        if (!file_exists($this->upload_dir . 'js/')) {
+            wp_mkdir_p($this->upload_dir . 'js/');
+        }
+        if (!file_exists($this->upload_dir . 'css/')) {
+            wp_mkdir_p($this->upload_dir . 'css/');
+        }
     }
 
     /**
@@ -78,16 +86,16 @@ class GSAP_WP_File_Editor {
      */
     private function init_editable_files() {
         $this->editable_files = array(
-            'global.js' => array(
+            'js/global.js' => array(
                 'name' => __('Global Animations', 'gsap-for-wordpress'),
-                'description' => __('Custom GSAP animations that load globally', 'gsap-for-wordpress'),
+                'description' => __('Add your custom GSAP animations that will load globally on your website', 'gsap-for-wordpress'),
                 'type' => 'javascript',
                 'icon' => 'dashicons-media-code',
                 'default_content' => $this->get_default_js_content()
             ),
-            'animation.css' => array(
+            'css/animation.css' => array(
                 'name' => __('Animation Styles', 'gsap-for-wordpress'),
-                'description' => __('Custom CSS styles for animations', 'gsap-for-wordpress'),
+                'description' => __('Add custom CSS styles to support your GSAP animations', 'gsap-for-wordpress'),
                 'type' => 'css',
                 'icon' => 'dashicons-admin-appearance',
                 'default_content' => $this->get_default_css_content()
@@ -112,12 +120,19 @@ class GSAP_WP_File_Editor {
      * Render file editor page
      */
     public function render_page() {
-        if (class_exists('GSAP_WP_Admin')) {
-            $admin = GSAP_WP_Admin::get_instance();
-            $admin->render_header();
-            $this->render_content();
-            $admin->render_footer();
-        }
+        // Render WordPress-style file editor interface
+        ?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline">
+                <?php _e('GSAP for WordPress - Customize', 'gsap-for-wordpress'); ?>
+            </h1>
+            <hr class="wp-header-end">
+
+            <div class="gsap-wp-customize-container">
+                <?php $this->render_content(); ?>
+            </div>
+        </div>
+        <?php
     }
 
     /**
@@ -130,29 +145,38 @@ class GSAP_WP_File_Editor {
             return;
         }
 
-        $this->current_file = isset($_GET['file']) ? sanitize_file_name($_GET['file']) : 'global.js';
+        $this->current_file = isset($_GET['file']) ? sanitize_text_field($_GET['file']) : 'js/global.js';
+
+        // Sanitize file path to prevent directory traversal
+        $this->current_file = str_replace(array('..', '\\'), array('', '/'), $this->current_file);
 
         if (!isset($this->editable_files[$this->current_file])) {
-            $this->current_file = 'global.js';
+            $this->current_file = 'js/global.js';
         }
 
         ?>
+        <!-- WordPress-style file editor interface -->
         <div class="gsap-wp-file-editor">
             <div class="gsap-wp-editor-layout">
+                <!-- Left sidebar with file tree and version history -->
                 <div class="gsap-wp-file-tree">
                     <?php $this->render_file_tree(); ?>
                     <?php $this->render_version_history(); ?>
                 </div>
 
+                <!-- Main editor area -->
                 <div class="gsap-wp-editor-main">
+                    <!-- Editor toolbar -->
                     <div class="gsap-wp-editor-toolbar">
                         <?php $this->render_editor_toolbar(); ?>
                     </div>
 
+                    <!-- Code editor container -->
                     <div class="gsap-wp-editor-container">
                         <?php $this->render_code_editor(); ?>
                     </div>
 
+                    <!-- Editor footer with help -->
                     <div class="gsap-wp-editor-footer">
                         <?php $this->render_editor_footer(); ?>
                     </div>
@@ -657,7 +681,8 @@ class GSAP_WP_File_Editor {
      */
     private function get_editor_url($file_key) {
         return add_query_arg(array(
-            'page' => 'gsap-wordpress-customize',
+            'page' => 'gsap-wordpress',
+            'tab' => 'customize',
             'file' => $file_key
         ), admin_url('admin.php'));
     }
