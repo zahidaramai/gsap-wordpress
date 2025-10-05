@@ -1,0 +1,479 @@
+/**
+ * Code Editor Styles for GSAP for WordPress
+ *
+ * @package GSAP_For_WordPress
+ * @since 1.0.0
+ */
+
+/* ==========================================================================
+   Version Control Panel
+   ========================================================================== */
+
+.gsap-wp-version-control-panel {
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.gsap-wp-version-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.gsap-wp-version-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gsap-wp-version-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.gsap-wp-version-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gsap-wp-version-item {
+    background: #f8f9fa;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.gsap-wp-version-item:hover {
+    border-color: #2271b1;
+    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+}
+
+.gsap-wp-version-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.gsap-wp-version-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2271b1;
+    margin-bottom: 4px;
+}
+
+.gsap-wp-version-meta {
+    font-size: 12px;
+    color: #646970;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.gsap-wp-version-date {
+    display: inline-flex;
+    align-items: center;
+}
+
+.gsap-wp-version-date::before {
+    content: '\f145';
+    font-family: dashicons;
+    margin-right: 4px;
+}
+
+.gsap-wp-version-author {
+    display: inline-flex;
+    align-items: center;
+}
+
+.gsap-wp-version-author::before {
+    content: '\f110';
+    font-family: dashicons;
+    margin-right: 4px;
+}
+
+.gsap-wp-version-comment {
+    font-size: 13px;
+    color: #2c3338;
+    font-style: italic;
+    padding: 8px 12px;
+    background: #fff;
+    border-left: 3px solid #2271b1;
+    border-radius: 3px;
+    margin-top: 8px;
+}
+
+.gsap-wp-version-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.gsap-wp-version-actions .button {
+    font-size: 12px;
+    height: 28px;
+    padding: 0 10px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gsap-wp-version-actions .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+.gsap-wp-no-versions {
+    text-align: center;
+    padding: 40px 20px;
+    color: #646970;
+}
+
+.gsap-wp-no-versions .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.3;
+    margin-bottom: 15px;
+}
+
+.gsap-wp-no-versions p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.gsap-wp-version-pagination {
+    padding: 15px;
+    text-align: center;
+    border-top: 1px solid #e1e5e9;
+}
+
+.gsap-wp-version-stats {
+    padding: 15px 20px;
+    background: #f0f6fc;
+    border-top: 1px solid #e1e5e9;
+}
+
+.gsap-wp-stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.gsap-wp-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #e1e5e9;
+}
+
+.gsap-wp-stat-item .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: #2271b1;
+}
+
+.gsap-wp-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.gsap-wp-stat-content strong {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+    line-height: 1.2;
+}
+
+.gsap-wp-stat-content span {
+    font-size: 11px;
+    color: #646970;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Version Comparison / Diff Viewer
+   ========================================================================== */
+
+.gsap-wp-version-comparison {
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.gsap-wp-version-comparison h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.gsap-wp-diff-viewer {
+    background: #1e1e1e;
+    border-radius: 6px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.gsap-wp-diff-line {
+    display: flex;
+    padding: 2px 0;
+    margin: 0;
+}
+
+.gsap-wp-diff-line.gsap-wp-diff-equal {
+    color: #d4d4d4;
+}
+
+.gsap-wp-diff-line.gsap-wp-diff-delete {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+.gsap-wp-diff-line.gsap-wp-diff-insert {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #86efac;
+}
+
+.gsap-wp-line-number {
+    display: inline-block;
+    width: 50px;
+    padding-right: 15px;
+    text-align: right;
+    color: #666;
+    user-select: none;
+}
+
+.gsap-wp-line-marker {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.gsap-wp-line-content {
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* ==========================================================================
+   Version Selector
+   ========================================================================== */
+
+.gsap-wp-version-selector {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #e1e5e9;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.gsap-wp-version-selector:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* ==========================================================================
+   No Permission Message
+   ========================================================================== */
+
+.gsap-wp-no-permission {
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.gsap-wp-no-permission .notice {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   Code Editor Enhancements
+   ========================================================================== */
+
+.gsap-wp-code-editor:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: -2px;
+}
+
+/* Line numbers (if implemented) */
+.gsap-wp-editor-with-lines {
+    display: flex;
+}
+
+.gsap-wp-line-numbers {
+    background: #2c3338;
+    color: #72aee6;
+    padding: 20px 10px;
+    text-align: right;
+    font-family: 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    user-select: none;
+    border-right: 1px solid #1e1e1e;
+}
+
+.gsap-wp-line-numbers span {
+    display: block;
+}
+
+/* Search/Replace overlay */
+.gsap-wp-search-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #2c3338;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.gsap-wp-search-overlay input {
+    background: #1e1e1e;
+    border: 1px solid #4a5568;
+    color: #f0f0f1;
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 13px;
+    width: 200px;
+}
+
+.gsap-wp-search-overlay input:focus {
+    border-color: #72aee6;
+    outline: none;
+}
+
+.gsap-wp-search-overlay button {
+    margin-left: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   Loading States
+   ========================================================================== */
+
+.gsap-wp-version-loading {
+    text-align: center;
+    padding: 30px;
+    color: #646970;
+}
+
+.gsap-wp-version-loading::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #e1e5e9;
+    border-top-color: #2271b1;
+    border-radius: 50%;
+    animation: gsapWpSpin 0.8s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes gsapWpSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .gsap-wp-version-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gsap-wp-version-actions {
+        justify-content: flex-start;
+        padding-top: 10px;
+        border-top: 1px solid #e1e5e9;
+    }
+
+    .gsap-wp-stats-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .gsap-wp-version-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .gsap-wp-version-actions {
+        flex-direction: column;
+    }
+
+    .gsap-wp-version-actions .button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.gsap-wp-version-item:focus-within {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+.button:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* Screen reader only text */
+.gsap-wp-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
