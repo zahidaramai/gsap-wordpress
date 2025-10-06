@@ -307,7 +307,7 @@ class GSAP_WP_Settings {
                 <?php $this->render_conditional_loading_settings(); ?>
 
                 <div class="gsap-wp-form-actions">
-                    <?php submit_button(__('Save Settings', 'gsap-for-wordpress'), 'primary', 'submit_settings'); ?>
+                    <?php submit_button(__('Save Settings', 'gsap-for-wordpress'), 'primary', 'submit_settings', false); ?>
                     <button type="button" class="button button-secondary" id="gsap-wp-reset-settings">
                         <?php _e('Reset to Defaults', 'gsap-for-wordpress'); ?>
                     </button>

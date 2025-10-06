@@ -164,7 +164,7 @@ final class GSAP_For_WordPress {
 
         // Core hooks
         add_action('init', array($this, 'init'), 0);
-        add_action('plugins_loaded', array($this, 'load_textdomain'));
+        add_action('init', array($this, 'load_textdomain'), 99);
 
         // Frontend hooks
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
