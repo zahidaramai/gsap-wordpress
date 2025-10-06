@@ -157,41 +157,30 @@
             const self = this;
 
             $('.gsap-wp-settings-form').on('submit', function(e) {
-                e.preventDefault(); // Prevent default form submission
-
                 const $form = $(this);
-                const $submitButton = $form.find('button[name="submit_settings"]');
+                const $submitButton = $form.find('button[name="submit_settings"], input[name="submit_settings"]');
                 const $checkedLibraries = $('.gsap-wp-library-checkbox:checked').not(':disabled');
 
+                // Validate that at least one library is selected
                 if ($checkedLibraries.length === 0) {
+                    e.preventDefault();
                     alert(gsapWpAjax.strings.no_libraries_selected);
                     return false;
                 }
 
-                // Show loading state
-                $submitButton.prop('disabled', true).text(gsapWpAjax.strings.saving);
+                // Show loading state while form submits
+                $submitButton.prop('disabled', true);
 
-                // Submit via AJAX
-                $.ajax({
-                    url: window.location.href,
-                    type: 'POST',
-                    data: $form.serialize(),
-                    success: function(response) {
-                        // Form was submitted successfully, show success message
-                        self.showNotice(gsapWpAjax.strings.saved, 'success');
+                // If it's a button, update text
+                if ($submitButton.is('button')) {
+                    $submitButton.text(gsapWpAjax.strings.saving);
+                } else {
+                    // If it's an input submit button, update value
+                    $submitButton.val(gsapWpAjax.strings.saving);
+                }
 
-                        $submitButton.prop('disabled', false).text('Save Settings');
-
-                        // Reload page after 1 second to reflect changes
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1500);
-                    },
-                    error: function() {
-                        self.showNotice(gsapWpAjax.strings.error, 'error');
-                        $submitButton.prop('disabled', false).text('Save Settings');
-                    }
-                });
+                // Allow form to submit normally to PHP handler
+                return true;
             });
         },
 
