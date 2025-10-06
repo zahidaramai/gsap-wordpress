@@ -615,14 +615,14 @@ final class GSAP_For_WordPress {
      *
      * @since 1.0.0
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      *
      * @since 1.0.0
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
 
 /**

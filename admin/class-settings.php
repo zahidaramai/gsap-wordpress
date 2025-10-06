@@ -690,10 +690,10 @@ gsap.to(".scroll-element", {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }

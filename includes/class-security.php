@@ -71,6 +71,11 @@ class GSAP_WP_Security {
      * @return bool
      */
     public function check_user_capabilities() {
+        // Only check on our plugin pages, not all admin pages
+        if (!isset($_GET['page']) || $_GET['page'] !== 'gsap-wordpress') {
+            return true;
+        }
+
         if (!current_user_can('manage_options')) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'gsap-for-wordpress'));
         }
@@ -371,10 +376,10 @@ class GSAP_WP_Security {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }

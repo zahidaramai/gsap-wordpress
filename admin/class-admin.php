@@ -215,14 +215,55 @@ class GSAP_WP_Admin {
      * Handle form submissions
      */
     public function handle_form_submissions() {
+        // Debug logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('GSAP: handle_form_submissions called');
+            error_log('GSAP: REQUEST_METHOD = ' . ($_SERVER['REQUEST_METHOD'] ?? 'not set'));
+            error_log('GSAP: $_GET[page] = ' . ($_GET['page'] ?? 'not set'));
+            error_log('GSAP: $_POST[submit_settings] = ' . (isset($_POST['submit_settings']) ? 'SET' : 'NOT SET'));
+            error_log('GSAP: $_POST keys = ' . implode(', ', array_keys($_POST)));
+        }
+
+        // Only process POST requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+
         // Check if we're on the plugin page
         if (!isset($_GET['page']) || $_GET['page'] !== 'gsap-wordpress') {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('GSAP: Early return - not on plugin page');
+            }
             return;
         }
 
         // Handle settings form submission
-        if (isset($_POST['submit_settings']) && check_admin_referer('gsap_wp_settings')) {
-            $this->handle_settings_submission();
+        if (isset($_POST['submit_settings'])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('GSAP: Submit button detected, checking nonce...');
+            }
+
+            // Check nonce without dying
+            $nonce_check = check_admin_referer('gsap_wp_settings', '_wpnonce', false);
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('GSAP: Nonce check result = ' . ($nonce_check ? 'VALID' : 'INVALID'));
+            }
+
+            if ($nonce_check) {
+                $this->handle_settings_submission();
+            } else {
+                // Show user-friendly error
+                add_settings_error(
+                    'gsap_wp_settings',
+                    'nonce_failed',
+                    __('Security verification failed. Please try again.', 'gsap-for-wordpress'),
+                    'error'
+                );
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('GSAP: Nonce verification FAILED');
+                }
+            }
         }
 
         // Handle file editor submission (handled via AJAX)
@@ -562,10 +603,10 @@ class GSAP_WP_Admin {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
