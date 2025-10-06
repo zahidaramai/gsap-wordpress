@@ -164,7 +164,6 @@ final class GSAP_For_WordPress {
 
         // Core hooks
         add_action('init', array($this, 'init'), 0);
-        add_action('init', array($this, 'load_textdomain'), 99);
 
         // Frontend hooks
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
@@ -247,15 +246,18 @@ final class GSAP_For_WordPress {
 
     /**
      * Load text domain for translations
+     * Note: Currently disabled as no translation files are in use
      *
      * @since 1.0.0
      */
     public function load_textdomain() {
-        load_plugin_textdomain(
-            'gsap-for-wordpress',
-            false,
-            dirname(GSAP_WP_PLUGIN_BASENAME) . '/languages/'
-        );
+        // Translation loading disabled - no translation files currently in use
+        // Uncomment when translation files are added:
+        // load_plugin_textdomain(
+        //     'gsap-for-wordpress',
+        //     false,
+        //     dirname(GSAP_WP_PLUGIN_BASENAME) . '/languages/'
+        // );
     }
 
     /**
