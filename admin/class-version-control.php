@@ -63,6 +63,7 @@ class GSAP_WP_Version_Control {
         add_action('wp_ajax_gsap_wp_delete_version', array($this, 'ajax_delete_version'));
         add_action('wp_ajax_gsap_wp_compare_versions', array($this, 'ajax_compare_versions'));
         add_action('wp_ajax_gsap_wp_export_versions', array($this, 'ajax_export_versions'));
+        add_action('wp_ajax_gsap_wp_get_restore_history', array($this, 'ajax_get_restore_history'));
     }
 
     /**
@@ -156,6 +157,10 @@ class GSAP_WP_Version_Control {
 
             <div class="gsap-wp-version-stats">
                 <?php $this->render_version_stats($file_path); ?>
+            </div>
+
+            <div class="gsap-wp-restore-history-section">
+                <?php $this->render_restore_history($file_path); ?>
             </div>
         </div>
         <?php
@@ -296,6 +301,18 @@ class GSAP_WP_Version_Control {
     }
 
     /**
+     * AJAX: Get restore history
+     */
+    public function ajax_get_restore_history() {
+        // Delegate to version manager
+        if ($this->version_manager) {
+            $this->version_manager->ajax_get_restore_history();
+        } else {
+            wp_send_json_error(__('Version manager not available.', 'gsap-for-wordpress'));
+        }
+    }
+
+    /**
      * Render error message
      *
      * @param string $message
@@ -382,6 +399,93 @@ class GSAP_WP_Version_Control {
                 </option>
             <?php endforeach; ?>
         </select>
+        <?php
+    }
+
+    /**
+     * Render restore history section
+     *
+     * @param string $file_path
+     */
+    private function render_restore_history($file_path) {
+        if (!$this->version_manager) {
+            return;
+        }
+
+        $restore_history = $this->version_manager->get_restore_history($file_path, 20);
+        ?>
+        <div class="gsap-wp-restore-history-container">
+            <h3>
+                <span class="dashicons dashicons-update"></span>
+                <?php _e('Restore History', 'gsap-for-wordpress'); ?>
+            </h3>
+
+            <?php if (empty($restore_history)): ?>
+                <div class="gsap-wp-no-restore-history">
+                    <span class="dashicons dashicons-info"></span>
+                    <p><?php _e('No restore operations yet. When you restore a version, it will be logged here.', 'gsap-for-wordpress'); ?></p>
+                </div>
+            <?php else: ?>
+                <div class="gsap-wp-restore-timeline">
+                    <?php foreach ($restore_history as $index => $restore): ?>
+                        <div class="gsap-wp-restore-item" data-restore-id="<?php echo esc_attr($restore->id); ?>">
+                            <div class="gsap-wp-restore-marker"></div>
+                            <div class="gsap-wp-restore-content">
+                                <div class="gsap-wp-restore-header">
+                                    <strong class="gsap-wp-restore-action">
+                                        <?php
+                                        if (!empty($restore->previous_version_number)) {
+                                            printf(
+                                                __('Restored v%1$d → v%2$d', 'gsap-for-wordpress'),
+                                                $restore->previous_version_number,
+                                                $restore->restored_version_number
+                                            );
+                                        } else {
+                                            printf(
+                                                __('Restored v%d', 'gsap-for-wordpress'),
+                                                $restore->restored_version_number
+                                            );
+                                        }
+                                        ?>
+                                    </strong>
+                                    <span class="gsap-wp-restore-badge gsap-wp-badge <?php echo esc_attr($restore->restore_type); ?>">
+                                        <?php echo esc_html(ucfirst($restore->restore_type)); ?>
+                                    </span>
+                                </div>
+                                <div class="gsap-wp-restore-meta">
+                                    <span class="gsap-wp-restore-date">
+                                        <?php echo esc_html(human_time_diff(strtotime($restore->restored_at))); ?> <?php _e('ago', 'gsap-for-wordpress'); ?>
+                                    </span>
+                                    <span class="gsap-wp-restore-separator">•</span>
+                                    <span class="gsap-wp-restore-author">
+                                        <?php printf(__('by %s', 'gsap-for-wordpress'), esc_html($restore->restored_by_name)); ?>
+                                    </span>
+                                </div>
+                                <?php if (!empty($restore->notes)): ?>
+                                    <div class="gsap-wp-restore-notes">
+                                        <span class="dashicons dashicons-format-quote"></span>
+                                        <?php echo esc_html($restore->notes); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($restore->restored_version_comment)): ?>
+                                    <div class="gsap-wp-restore-version-comment">
+                                        <?php echo esc_html($restore->restored_version_comment); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if (count($restore_history) >= 20): ?>
+                    <div class="gsap-wp-restore-pagination">
+                        <button type="button" class="button gsap-wp-load-more-restores" data-file="<?php echo esc_attr($file_path); ?>">
+                            <?php _e('Load More', 'gsap-for-wordpress'); ?>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
         <?php
     }
 

@@ -587,45 +587,96 @@ class GSAP_WP_GSAP_Loader {
      */
     private function output_gsap_config() {
         $enabled_libraries = $this->get_enabled_libraries();
+        $settings = $this->settings;
+        $performance = isset($settings['performance']) ? $settings['performance'] : array();
         ?>
         <script type="text/javascript">
-        /* GSAP WordPress Configuration */
-        if (typeof gsap !== 'undefined') {
-            // Set default GSAP configuration
-            console.log('🎬 GSAP for WordPress v<?php echo GSAP_WP_VERSION; ?> loaded successfully!');
-            
-            // Log activated libraries
-            <?php if (!empty($enabled_libraries)): ?>
-            console.log('📚 Activated GSAP Libraries:');
-            <?php foreach ($enabled_libraries as $library): ?>
-                <?php if (isset($this->library_definitions[$library])): ?>
-                    <?php $lib_info = $this->library_definitions[$library]; ?>
-                    console.log('  ✅ <?php echo esc_js($library); ?> (<?php echo esc_js($lib_info['file']); ?>)');
+        /* GSAP WordPress Configuration & Validation */
+        (function() {
+            // Styled console header
+            console.log('%c🎬 GSAP for WordPress', 'color: #88ce02; font-size: 18px; font-weight: bold; padding: 5px 0;');
+            console.log('%cVersion: <?php echo GSAP_WP_VERSION; ?>', 'color: #666; font-size: 12px;');
+            console.log('');
+
+            if (typeof gsap !== 'undefined') {
+                console.log('%c✅ GSAP Core Loaded Successfully', 'color: #00a32a; font-weight: bold; font-size: 14px;');
+                console.log('%cGSAP Version: ' + gsap.version, 'color: #666;');
+                console.log('');
+
+                <?php if (!empty($enabled_libraries)): ?>
+                console.log('%c📚 Activated Libraries (<?php echo count($enabled_libraries); ?>):', 'color: #2271b1; font-weight: bold; font-size: 13px;');
+                <?php foreach ($enabled_libraries as $library): ?>
+                    <?php if (isset($this->library_definitions[$library])): ?>
+                        <?php $lib = $this->library_definitions[$library]; ?>
+                        <?php $lib_name = str_replace('_', ' ', ucwords($library)); ?>
+                        console.log('  %c✓%c <?php echo esc_js($lib_name); ?> %c(<?php echo esc_js($lib['file']); ?>)',
+                            'color: #00a32a; font-weight: bold;',
+                            'color: #1d2327; font-weight: 600;',
+                            'color: #666; font-size: 11px;'
+                        );
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                console.log('');
+
+                console.log('%c⚙️ Performance Settings:', 'color: #2271b1; font-weight: bold; font-size: 13px;');
+                console.log('  Minified Files: %c<?php echo isset($performance['minified']) && $performance['minified'] ? 'Yes ✓' : 'No'; ?>',
+                    'color: <?php echo isset($performance['minified']) && $performance['minified'] ? '#00a32a' : '#d63638'; ?>; font-weight: 600;'
+                );
+                console.log('  Load in Footer: %c<?php echo isset($performance['load_in_footer']) && $performance['load_in_footer'] ? 'Yes ✓' : 'No'; ?>',
+                    'color: <?php echo isset($performance['load_in_footer']) && $performance['load_in_footer'] ? '#00a32a' : '#d63638'; ?>; font-weight: 600;'
+                );
+                console.log('  CDN Loading: %c<?php echo isset($performance['use_cdn']) && $performance['use_cdn'] ? 'Yes ✓' : 'No'; ?>',
+                    'color: <?php echo isset($performance['use_cdn']) && $performance['use_cdn'] ? '#00a32a' : '#666'; ?>; font-weight: 600;'
+                );
+                console.log('  Cache Busting: %c<?php echo isset($performance['cache_busting']) && $performance['cache_busting'] ? 'Enabled ✓' : 'Disabled'; ?>',
+                    'color: <?php echo isset($performance['cache_busting']) && $performance['cache_busting'] ? '#00a32a' : '#666'; ?>; font-weight: 600;'
+                );
+                console.log('');
+
+                <?php else: ?>
+                console.warn('%c⚠️ No Libraries Enabled', 'color: #f0b849; font-weight: bold; font-size: 14px;');
+                console.log('%cEnable GSAP libraries in: WP Admin → GSAP → Settings', 'color: #666;');
+                console.log('');
                 <?php endif; ?>
-            <?php endforeach; ?>
-            <?php else: ?>
-            console.log('⚠️ No GSAP libraries are currently activated. Please enable libraries in the plugin settings.');
-            <?php endif; ?>
 
-            // Custom GSAP defaults
-            gsap.defaults({
-                ease: "power2.out",
-                duration: 1
-            });
-
-            // Refresh ScrollTrigger on window resize
-            if (typeof ScrollTrigger !== 'undefined') {
-                console.log('🔄 ScrollTrigger auto-refresh enabled');
-                window.addEventListener('resize', function() {
-                    ScrollTrigger.refresh();
+                // Set default GSAP configuration
+                gsap.defaults({
+                    ease: "power2.out",
+                    duration: 1
                 });
-            }
+                console.log('%cℹ️ Default Settings Applied:', 'color: #2271b1; font-size: 12px;');
+                console.log('  Ease: power2.out');
+                console.log('  Duration: 1s');
+                console.log('');
 
-            // Log when GSAP is ready
-            console.log('🚀 GSAP is ready for animations! Start creating amazing effects.');
-        } else {
-            console.error('❌ GSAP failed to load. Please check your plugin settings.');
-        }
+                // ScrollTrigger integration
+                if (typeof ScrollTrigger !== 'undefined') {
+                    console.log('%c🔄 ScrollTrigger Active', 'color: #00a32a; font-weight: bold;');
+                    console.log('  Auto-refresh on resize: Enabled ✓');
+                    window.addEventListener('resize', function() {
+                        ScrollTrigger.refresh();
+                    });
+                    console.log('');
+                }
+
+                // Success message
+                console.log('%c🚀 GSAP is Ready!', 'color: #00a32a; font-weight: bold; font-size: 16px;');
+                console.log('%cStart creating amazing animations with GSAP.', 'color: #666;');
+                console.log('%cDocs: https://greensock.com/docs/', 'color: #2271b1;');
+
+            } else {
+                console.error('%c❌ GSAP Failed to Load', 'color: #d63638; font-weight: bold; font-size: 16px;');
+                console.error('%cPossible causes:', 'color: #d63638; font-weight: bold;');
+                console.log('  1. No libraries enabled in WP Admin → GSAP → Settings');
+                console.log('  2. JavaScript conflict with another plugin');
+                console.log('  3. File loading error (check browser Network tab)');
+                console.log('');
+                console.log('%cTroubleshooting:', 'color: #2271b1; font-weight: bold;');
+                console.log('  • Enable GSAP Core in plugin settings');
+                console.log('  • Check browser console for errors');
+                console.log('  • Disable other plugins to test for conflicts');
+            }
+        })();
         </script>
         <?php
     }

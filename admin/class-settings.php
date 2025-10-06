@@ -355,8 +355,9 @@ class GSAP_WP_Settings {
      * @param array $library
      */
     private function render_library_option($library_key, $library) {
-        // Check if library is enabled in settings
+        // Check if library is enabled in settings with proper fallback
         $is_enabled = false;
+
         if (isset($this->settings['libraries'][$library_key])) {
             $is_enabled = (bool) $this->settings['libraries'][$library_key];
         }
@@ -368,6 +369,16 @@ class GSAP_WP_Settings {
         // Required libraries are always enabled
         if ($is_required) {
             $is_enabled = true;
+        }
+
+        // Debug logging in WP_DEBUG mode
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'GSAP Library %s: %s (required: %s)',
+                $library_key,
+                $is_enabled ? 'ENABLED' : 'disabled',
+                $is_required ? 'yes' : 'no'
+            ));
         }
 
         $classes = array('gsap-wp-library-option');

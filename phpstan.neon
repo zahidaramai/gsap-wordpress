@@ -1,0 +1,99 @@
+# PHPStan Static Analysis Configuration for GSAP WordPress Plugin
+# Requires: PHP 8.1+, WordPress 6.7+
+
+parameters:
+	# Analysis level (0-9, max level for strictest checks)
+	level: 8
+
+	# Paths to analyze
+	paths:
+		- admin
+		- includes
+		- gsap-for-wordpress.php
+		- uninstall.php
+
+	# Bootstrap files
+	bootstrapFiles:
+		- vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
+
+	# Excluded paths
+	excludePaths:
+		- vendor
+		- node_modules
+		- assets/js
+		- languages
+		- tests
+
+	# Minimum PHP version
+	phpVersion: 80100 # PHP 8.1
+
+	# Type coverage settings
+	checkMissingIterableValueType: false
+	checkGenericClassInNonGenericObjectType: false
+
+	# Ignore WordPress-specific patterns
+	ignoreErrors:
+		# WordPress hooks don't have proper type definitions
+		- '#^Function (add_action|add_filter|do_action|apply_filters|has_action|has_filter|remove_action|remove_filter) invoked with#'
+
+		# WordPress global variables
+		- '#^Variable \$wpdb .* might not be defined#'
+		- '#^Variable \$wp_version .* might not be defined#'
+
+		# WordPress functions that might return mixed types
+		- '#^Parameter .* of function (get_option|update_option|delete_option) expects#'
+		- '#^Parameter .* of function (get_transient|set_transient|delete_transient) expects#'
+
+		# Superglobals are checked by WordPress nonce verification
+		- '#^Variable \$_(POST|GET|REQUEST|SERVER|COOKIE) .* might not be defined#'
+
+		# Allow dynamic properties (WordPress backward compatibility)
+		- '#^Access to an undefined property#'
+
+		# Allow WordPress-style array access
+		- '#^Offset .* does not exist on array#'
+
+	# WordPress-specific extensions
+	wordpress:
+		# Enable WordPress-specific checks
+		stubs:
+			- wordpress-stubs
+
+		# Treat wpdb as global
+		wpdb: true
+
+	# Universal object crates (stdClass)
+	universalObjectCratesClasses:
+		- stdClass
+
+	# Dynamic constants
+	dynamicConstantNames:
+		- ABSPATH
+		- WP_DEBUG
+		- WP_DEBUG_LOG
+		- WP_DEBUG_DISPLAY
+		- GSAP_WP_DEBUG
+
+	# Report possibly undefined variables
+	checkUninitializedProperties: true
+	checkDynamicProperties: false # WordPress uses dynamic properties extensively
+
+	# Function call analysis
+	checkMaybeUndefinedArrayOffsetAccess: true
+	checkTooWideReturnTypesInProtectedAndPublicMethods: true
+	checkMissingCallableSignature: true
+
+	# Type inference
+	inferPrivatePropertyTypeFromConstructor: true
+
+	# Bleeding edge features (use latest PHPStan features)
+	treatPhpDocTypesAsCertain: false
+
+	# Custom rules
+	reportUnmatchedIgnoredErrors: false
+	reportStaticMethodSignatures: true
+
+# Include additional rule sets
+includes:
+	# WordPress-specific rules
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon

@@ -1,0 +1,83 @@
+{
+  "name": "zahidaramai/gsap-for-wordpress",
+  "description": "Complete GSAP integration with advanced admin interface, file editor, and version control for WordPress",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "gsap",
+    "greensock",
+    "animation",
+    "scrolltrigger"
+  ],
+  "homepage": "https://zahidaramai.com/gsap-for-wordpress",
+  "authors": [
+    {
+      "name": "Zahid Aramai",
+      "email": "hello@zahidaramai.com",
+      "homepage": "https://zahidaramai.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/zahidaramai/gsap-for-wordpress/issues",
+    "source": "https://github.com/zahidaramai/gsap-for-wordpress"
+  },
+  "require": {
+    "php": "^8.1",
+    "composer/installers": "^2.0"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.7",
+    "wp-coding-standards/wpcs": "^3.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "phpstan/phpstan": "^1.10",
+    "szepeviktor/phpstan-wordpress": "^1.3",
+    "php-stubs/wordpress-stubs": "^6.7"
+  },
+  "autoload": {
+    "classmap": [
+      "includes/",
+      "admin/"
+    ],
+    "files": []
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "GSAP_WP\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "phpcs": "phpcs --standard=phpcs.xml --colors --report=full",
+    "phpcbf": "phpcbf --standard=phpcs.xml",
+    "phpstan": "phpstan analyse --memory-limit=2G --ansi",
+    "lint": [
+      "@phpcs",
+      "@phpstan"
+    ],
+    "fix": "@phpcbf",
+    "test": "@lint"
+  },
+  "scripts-descriptions": {
+    "phpcs": "Run PHP CodeSniffer to check WordPress coding standards",
+    "phpcbf": "Auto-fix coding standard violations where possible",
+    "phpstan": "Run PHPStan static analysis",
+    "lint": "Run all linting checks (PHPCS + PHPStan)",
+    "fix": "Auto-fix coding standard violations",
+    "test": "Run all tests and checks"
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    },
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "platform": {
+      "php": "8.1"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

@@ -464,6 +464,128 @@
             };
 
             reader.readAsText(file);
+        },
+
+        /**
+         * Load restore history
+         */
+        loadRestoreHistory: function(filePath, append) {
+            append = append || false;
+
+            GSAPAdmin.ajax('gsap_wp_get_restore_history', {
+                file_path: filePath,
+                limit: 20
+            }, function(data) {
+                if (data.history && data.history.length > 0) {
+                    const $timeline = $('.gsap-wp-restore-timeline');
+                    const $container = $('.gsap-wp-restore-history-container');
+
+                    if (!append) {
+                        $timeline.empty();
+                    }
+
+                    // Render restore history items
+                    data.history.forEach(function(restore) {
+                        const $item = GSAPAdmin.renderRestoreItem(restore);
+                        $timeline.append($item);
+                    });
+
+                    // Show/hide "Load More" button
+                    if (data.history.length < 20) {
+                        $('.gsap-wp-restore-pagination').hide();
+                    } else {
+                        $('.gsap-wp-restore-pagination').show();
+                    }
+
+                    // Hide "no history" message
+                    $('.gsap-wp-no-restore-history').hide();
+                    $timeline.show();
+                } else {
+                    $('.gsap-wp-no-restore-history').show();
+                    $('.gsap-wp-restore-timeline').hide();
+                }
+            });
+        },
+
+        /**
+         * Render a restore history item
+         */
+        renderRestoreItem: function(restore) {
+            const $item = $('<div>').addClass('gsap-wp-restore-item').attr('data-restore-id', restore.id);
+            const $marker = $('<div>').addClass('gsap-wp-restore-marker');
+            const $content = $('<div>').addClass('gsap-wp-restore-content');
+
+            // Header
+            const $header = $('<div>').addClass('gsap-wp-restore-header');
+            let actionText = '';
+            if (restore.previous_version_number) {
+                actionText = 'Restored v' + restore.previous_version_number + ' → v' + restore.restored_version_number;
+            } else {
+                actionText = 'Restored v' + restore.restored_version_number;
+            }
+            const $action = $('<strong>').addClass('gsap-wp-restore-action').text(actionText);
+            const $badge = $('<span>')
+                .addClass('gsap-wp-restore-badge gsap-wp-badge ' + restore.restore_type)
+                .text(restore.restore_type.charAt(0).toUpperCase() + restore.restore_type.slice(1));
+
+            $header.append($action, $badge);
+
+            // Meta
+            const $meta = $('<div>').addClass('gsap-wp-restore-meta');
+            const timeAgo = GSAPAdmin.timeAgo(new Date(restore.restored_at));
+            $meta.append(
+                $('<span>').addClass('gsap-wp-restore-date').text(timeAgo + ' ago'),
+                $('<span>').addClass('gsap-wp-restore-separator').text('•'),
+                $('<span>').addClass('gsap-wp-restore-author').text('by ' + restore.restored_by_name)
+            );
+
+            $content.append($header, $meta);
+
+            // Notes
+            if (restore.notes) {
+                const $notes = $('<div>').addClass('gsap-wp-restore-notes');
+                $notes.append(
+                    $('<span>').addClass('dashicons dashicons-format-quote'),
+                    $('<span>').text(restore.notes)
+                );
+                $content.append($notes);
+            }
+
+            // Version comment
+            if (restore.restored_version_comment) {
+                const $comment = $('<div>')
+                    .addClass('gsap-wp-restore-version-comment')
+                    .text(restore.restored_version_comment);
+                $content.append($comment);
+            }
+
+            $item.append($marker, $content);
+            return $item;
+        },
+
+        /**
+         * Simple time ago calculator
+         */
+        timeAgo: function(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            const intervals = {
+                year: 31536000,
+                month: 2592000,
+                week: 604800,
+                day: 86400,
+                hour: 3600,
+                minute: 60
+            };
+
+            for (const [name, secondsInInterval] of Object.entries(intervals)) {
+                const interval = Math.floor(seconds / secondsInInterval);
+                if (interval >= 1) {
+                    return interval + ' ' + name + (interval > 1 ? 's' : '');
+                }
+            }
+
+            return 'just now';
         }
     };
 
@@ -490,9 +612,58 @@
         $('#gsap-wp-import-settings').on('change', function() {
             GSAPAdmin.importSettings(this);
         });
+
+        // Load more restore history
+        $(document).on('click', '.gsap-wp-load-more-restores', function(e) {
+            e.preventDefault();
+            const filePath = $(this).data('file');
+            GSAPAdmin.loadRestoreHistory(filePath, true);
+        });
+
+        // Initialize restore history if on version control page
+        if ($('.gsap-wp-restore-history-container').length) {
+            const filePath = $('.gsap-wp-restore-history-container').data('file-path');
+            if (filePath) {
+                GSAPAdmin.loadRestoreHistory(filePath);
+            }
+        }
     });
 
     // Make GSAPAdmin globally available
     window.GSAPAdmin = GSAPAdmin;
+
+    /**
+     * Settings page enhancement - Auto-scroll to success notice
+     */
+    jQuery(document).ready(function($) {
+        // Check if we just saved settings
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('settings-updated') === 'true') {
+            // Scroll to top smoothly to show success message
+            $('html, body').animate({
+                scrollTop: 0
+            }, 300);
+
+            // Add visual highlight to notice
+            setTimeout(function() {
+                $('.gsap-wp-success-notice').addClass('highlighted');
+            }, 400);
+
+            // Optional: Log to console for developer feedback
+            if (window.console) {
+                console.log('%c✓ GSAP Settings Saved', 'color: #00a32a; font-weight: bold; font-size: 14px;');
+                console.log('%cSettings have been updated successfully.', 'color: #666;');
+            }
+
+            // Optional: Auto-reload to ensure fresh state (uncomment if needed)
+            // This ensures all cached data is cleared and fresh settings are loaded
+            /*
+            setTimeout(function() {
+                var cleanUrl = window.location.pathname + '?page=gsap-wordpress&tab=settings';
+                window.location.href = cleanUrl;
+            }, 2500);
+            */
+        }
+    });
 
 })(jQuery);

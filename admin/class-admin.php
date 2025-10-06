@@ -293,15 +293,26 @@ class GSAP_WP_Admin {
 
         update_option('gsap_wp_settings', $new_settings);
 
+        // Force flush rewrite rules to ensure changes take effect immediately
+        flush_rewrite_rules();
+
         // Clear any cached data
         $this->clear_cache();
+
+        // Delete transients to force fresh settings reload
+        delete_transient('gsap_wp_loaded_settings');
+        delete_transient('gsap_wp_library_cache');
 
         // Log the settings change
         if (class_exists('GSAP_WP_Security')) {
             GSAP_WP_Security::get_instance()->log_security_event(
                 'settings_updated',
                 'GSAP settings were updated',
-                array('user_id' => get_current_user_id())
+                array(
+                    'user_id' => get_current_user_id(),
+                    'libraries_count' => count(array_filter($sanitized_libraries)),
+                    'performance' => $performance
+                )
             );
         }
 
@@ -337,10 +348,40 @@ class GSAP_WP_Admin {
         // Show settings saved message
         if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
             if (get_transient('gsap_wp_settings_updated')) {
+                $settings = get_option('gsap_wp_settings', array());
+                $library_count = isset($settings['libraries']) ? count(array_filter($settings['libraries'])) : 0;
                 ?>
-                <div class="notice notice-success is-dismissible">
-                    <p><strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong></p>
+                <div class="notice notice-success is-dismissible gsap-wp-success-notice">
+                    <p>
+                        <span class="dashicons dashicons-yes-alt"></span>
+                        <strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong>
+                        <?php
+                        if ($library_count > 0) {
+                            printf(
+                                _n(
+                                    '%d GSAP library is now active on your website.',
+                                    '%d GSAP libraries are now active on your website.',
+                                    $library_count,
+                                    'gsap-for-wordpress'
+                                ),
+                                $library_count
+                            );
+                        } else {
+                            _e('No GSAP libraries are currently active. Enable libraries below to start using GSAP.', 'gsap-for-wordpress');
+                        }
+                        ?>
+                    </p>
                 </div>
+                <script type="text/javascript">
+                jQuery(document).ready(function($) {
+                    // Auto-dismiss after 7 seconds
+                    setTimeout(function() {
+                        $('.gsap-wp-success-notice').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    }, 7000);
+                });
+                </script>
                 <?php
                 delete_transient('gsap_wp_settings_updated');
             }

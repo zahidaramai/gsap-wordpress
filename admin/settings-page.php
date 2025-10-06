@@ -1,6 +1,10 @@
 <?php
 /**
  * Admin Settings Page for GSAP for WordPress
+ *
+ * Note: This file is deprecated and kept only for backwards compatibility.
+ * The actual settings rendering is handled by GSAP_WP_Settings class.
+ * Form submission is handled by GSAP_WP_Admin class.
  */
 
 // Prevent direct access
@@ -8,25 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Handle form submission
-if (isset($_POST['submit']) && check_admin_referer('gsap_wp_settings_nonce')) {
-    $settings = array(
-        'load_gsap_core' => isset($_POST['load_gsap_core']),
-        'load_css_plugin' => isset($_POST['load_css_plugin']),
-        'load_scroll_trigger' => isset($_POST['load_scroll_trigger']),
-        'load_text_plugin' => isset($_POST['load_text_plugin']),
-        'load_morphsvg' => isset($_POST['load_morphsvg']),
-        'load_drawsvg' => isset($_POST['load_drawsvg']),
-        'load_split_text' => isset($_POST['load_split_text']),
-        'load_in_footer' => isset($_POST['load_in_footer']),
-        'minified_version' => isset($_POST['minified_version'])
-    );
-
-    update_option('gsap_wp_settings', $settings);
-    echo '<div class="notice notice-success"><p>' . __('Settings saved successfully!', 'gsap-for-wordpress') . '</p></div>';
-}
-
-// Get current settings
+// Get current settings for display only
 $settings = get_option('gsap_wp_settings', array());
 ?>
 
@@ -35,7 +21,6 @@ $settings = get_option('gsap_wp_settings', array());
 
     <div class="gsap-wp-admin-container">
         <form method="post" action="">
-            <?php wp_nonce_field('gsap_wp_settings_nonce'); ?>
 
             <table class="form-table">
                 <tbody>

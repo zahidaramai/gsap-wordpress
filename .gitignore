@@ -1,0 +1,138 @@
+# GSAP for WordPress - Git Ignore Configuration
+
+# WordPress Core Files
+wp-config.php
+wp-config-local.php
+wp-content/advanced-cache.php
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/uploads/
+wp-content/mu-plugins/
+wp-content/wp-cache-config.php
+wp-content/plugins/
+wp-content/themes/
+
+# WordPress Specific
+.htaccess
+sitemap.xml
+sitemap.xml.gz
+*.log
+
+# PHP Dependencies
+/vendor/
+composer.phar
+composer.lock
+
+# Node Dependencies
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE and Editor Files
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.project
+.settings/
+.buildpath
+
+# Build and Distribution
+/build/
+/dist/
+*.zip
+*.tar.gz
+
+# Testing
+/tests/coverage/
+/tests/_output/
+phpunit.xml
+.phpunit.result.cache
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Temporary Files
+*.tmp
+*.temp
+*.cache
+/tmp/
+/temp/
+
+# Language Files (compiled)
+/languages/*.mo
+/languages/*.pot
+
+# Plugin Specific
+*.sql
+*.sqlite
+error_log
+debug.log
+
+# Version Control
+*.orig
+*.rej
+*.patch
+
+# Security
+.htpasswd
+.htpasswd-users
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*-backup-*
+*-old
+
+# PHP Storm
+atlassian-ide-plugin.xml
+
+# NetBeans
+nbproject/
+
+# Eclipse
+.project
+.buildpath
+.settings/
+
+# Sass
+.sass-cache/
+*.css.map
+*.sass.map
+*.scss.map
+
+# Documentation
+/documentation/node_modules/
+
+# Misc
+/logs/
+/bin/
+.phpcs-cache

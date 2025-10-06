@@ -10,9 +10,9 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: gsap-for-wordpress
  * Domain Path: /languages
- * Requires at least: 5.0
- * Tested up to: 6.4
- * Requires PHP: 7.4
+ * Requires at least: 6.7
+ * Tested up to: 6.7
+ * Requires PHP: 8.1
  * Network: false
  *
  * @package GSAP_For_WordPress
@@ -66,7 +66,7 @@ final class GSAP_For_WordPress {
      * @var string
      * @since 1.0.0
      */
-    public $min_wp_version = '5.0';
+    public $min_wp_version = '6.7';
 
     /**
      * Minimum PHP version required
@@ -74,7 +74,7 @@ final class GSAP_For_WordPress {
      * @var string
      * @since 1.0.0
      */
-    public $min_php_version = '7.4';
+    public $min_php_version = '8.1';
 
     /**
      * Get single instance
