@@ -467,7 +467,6 @@ final class GSAP_For_WordPress {
         $default_settings = array(
             'libraries' => array(
                 'gsap_core' => true,
-                'css_plugin' => true,
                 'scroll_trigger' => false,
                 'observer' => false,
                 'flip' => false,
