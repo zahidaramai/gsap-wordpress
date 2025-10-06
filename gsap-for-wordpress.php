@@ -352,11 +352,16 @@ final class GSAP_For_WordPress {
         $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'settings';
 
         if ($current_tab === 'customize') {
+            // Enqueue WordPress CodeMirror for syntax highlighting
+            wp_enqueue_code_editor(array('type' => 'application/javascript'));
+            wp_enqueue_script('wp-theme-plugin-editor');
+            wp_enqueue_style('wp-codemirror');
+
             // Editor styles
             wp_enqueue_style(
                 'gsap-wp-editor',
                 GSAP_WP_ADMIN_URL . 'css/editor.css',
-                array('gsap-wp-admin'),
+                array('gsap-wp-admin', 'wp-codemirror'),
                 GSAP_WP_VERSION
             );
 
@@ -364,7 +369,7 @@ final class GSAP_For_WordPress {
             wp_enqueue_script(
                 'gsap-wp-editor',
                 GSAP_WP_ADMIN_URL . 'js/editor.js',
-                array('jquery', 'gsap-wp-admin'),
+                array('jquery', 'gsap-wp-admin', 'wp-codemirror'),
                 GSAP_WP_VERSION,
                 true
             );

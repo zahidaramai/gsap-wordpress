@@ -137,55 +137,96 @@
         },
 
         /**
-         * Initialize code editor
+         * Initialize code editor with CodeMirror
          */
         initCodeEditor: function() {
             const $editor = $('#gsap-wp-code-editor');
 
-            if (!$editor.length) return;
+            if (!$editor.length || typeof wp === 'undefined' || typeof wp.codeEditor === 'undefined') {
+                return;
+            }
 
-            // Track cursor position
-            $editor.on('click keyup', this.updateCursorPosition);
+            const self = this;
 
-            // Add tab support
-            $editor.on('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    const value = this.value;
+            // Get file type from data attribute
+            const fileType = $editor.data('type') || 'javascript';
 
-                    // Insert tab
-                    this.value = value.substring(0, start) + '  ' + value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 2;
+            // CodeMirror settings based on file type
+            const editorSettings = wp.codeEditor.defaultSettings ? _.clone(wp.codeEditor.defaultSettings) : {};
+            editorSettings.codemirror = _.extend(
+                {},
+                editorSettings.codemirror || {},
+                {
+                    mode: fileType === 'css' ? 'css' : 'javascript',
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    styleActiveLine: true,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    theme: 'material-darker',
+                    indentUnit: 2,
+                    tabSize: 2,
+                    indentWithTabs: false,
+                    extraKeys: {
+                        'Ctrl-S': function() { self.saveFile(); },
+                        'Cmd-S': function() { self.saveFile(); }
+                    }
                 }
+            );
+
+            // Initialize CodeMirror
+            this.editor = wp.codeEditor.initialize($editor[0], editorSettings);
+
+            // Track changes for auto-save
+            this.editor.codemirror.on('change', function() {
+                self.hasUnsavedChanges = true;
+                self.updateStatus('modified');
+                self.scheduleAutoSave();
             });
 
-            // Syntax highlighting (basic)
-            this.applySyntaxHighlighting();
+            // Update cursor position
+            this.editor.codemirror.on('cursorActivity', function() {
+                self.updateCursorPosition();
+            });
+
+            // Initial cursor position
+            this.updateCursorPosition();
         },
 
         /**
          * Update cursor position display
          */
         updateCursorPosition: function() {
-            const $editor = $('#gsap-wp-code-editor');
-            const text = $editor.val();
-            const position = $editor[0].selectionStart;
+            if (!this.editor || !this.editor.codemirror) {
+                return;
+            }
 
-            const lines = text.substring(0, position).split('\n');
-            const line = lines.length;
-            const column = lines[lines.length - 1].length + 1;
+            const cursor = this.editor.codemirror.getCursor();
+            const line = cursor.line + 1;
+            const column = cursor.ch + 1;
 
             $('.gsap-wp-cursor-position').text('Line ' + line + ', Column ' + column);
         },
 
         /**
-         * Apply basic syntax highlighting
+         * Get editor content
          */
-        applySyntaxHighlighting: function() {
-            // This is a placeholder for future CodeMirror or Monaco integration
-            // For now, the editor uses a monospace font with dark theme
+        getEditorContent: function() {
+            if (this.editor && this.editor.codemirror) {
+                return this.editor.codemirror.getValue();
+            }
+            return $('#gsap-wp-code-editor').val();
+        },
+
+        /**
+         * Set editor content
+         */
+        setEditorContent: function(content) {
+            if (this.editor && this.editor.codemirror) {
+                this.editor.codemirror.setValue(content);
+            } else {
+                $('#gsap-wp-code-editor').val(content);
+            }
         },
 
         /**
@@ -234,7 +275,7 @@
          */
         saveFile: function(isAutoSave) {
             const self = this;
-            const content = $('#gsap-wp-code-editor').val();
+            const content = this.getEditorContent();
             const fileName = this.currentFile;
 
             if (!fileName) {
