@@ -121,6 +121,19 @@
                     return 'You have unsaved changes. Are you sure you want to leave?';
                 }
             });
+
+            // Modal close handlers
+            $('.gsap-wp-modal-close, .gsap-wp-modal').on('click', function(e) {
+                if ($(e.target).hasClass('gsap-wp-modal') || $(e.target).hasClass('gsap-wp-modal-close')) {
+                    $('.gsap-wp-modal').fadeOut(200);
+                    $('#version-comment').val('');
+                }
+            });
+
+            // Prevent modal content clicks from closing modal
+            $('.gsap-wp-modal-content').on('click', function(e) {
+                e.stopPropagation();
+            });
         },
 
         /**

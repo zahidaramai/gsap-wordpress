@@ -185,9 +185,8 @@ class GSAP_WP_Version_Manager {
             return new WP_Error('version_not_found', __('Version not found.', 'gsap-for-wordpress'));
         }
 
-        // Get upload directory
-        $upload_dir = wp_upload_dir();
-        $file_path = $upload_dir['basedir'] . '/gsap-wordpress/' . $version->file_path;
+        // Use plugin assets directory
+        $file_path = GSAP_WP_PLUGIN_PATH . 'assets/' . $version->file_path;
 
         // Create backup of current version before restoring
         if (file_exists($file_path)) {
@@ -279,9 +278,8 @@ class GSAP_WP_Version_Manager {
             }
             $content2 = $version2->content;
         } else {
-            // Compare with current file
-            $upload_dir = wp_upload_dir();
-            $file_path = $upload_dir['basedir'] . '/gsap-wordpress/' . $version1->file_path;
+            // Compare with current file using plugin assets directory
+            $file_path = GSAP_WP_PLUGIN_PATH . 'assets/' . $version1->file_path;
             if (file_exists($file_path)) {
                 $content2 = file_get_contents($file_path);
             }
@@ -299,12 +297,12 @@ class GSAP_WP_Version_Manager {
             wp_die(__('Security check failed.', 'gsap-for-wordpress'));
         }
 
-        $file_path = sanitize_file_name($_POST['file_path']);
-        $comment = sanitize_textarea_field($_POST['comment']);
+        $file_path = sanitize_text_field($_POST['file_path']);
+        $file_path = str_replace(array('..', '\\'), array('', '/'), $file_path);
+        $comment = isset($_POST['comment']) ? sanitize_textarea_field($_POST['comment']) : '';
 
-        // Get current file content
-        $upload_dir = wp_upload_dir();
-        $full_file_path = $upload_dir['basedir'] . '/gsap-wordpress/' . $file_path;
+        // Get current file content using plugin assets directory
+        $full_file_path = GSAP_WP_PLUGIN_PATH . 'assets/' . $file_path;
 
         if (!file_exists($full_file_path)) {
             wp_send_json_error(__('File not found.', 'gsap-for-wordpress'));

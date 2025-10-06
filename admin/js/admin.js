@@ -154,18 +154,44 @@
          * Initialize form validation
          */
         initFormValidation: function() {
+            const self = this;
+
             $('.gsap-wp-settings-form').on('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+
+                const $form = $(this);
+                const $submitButton = $form.find('button[name="submit_settings"]');
                 const $checkedLibraries = $('.gsap-wp-library-checkbox:checked').not(':disabled');
 
                 if ($checkedLibraries.length === 0) {
                     alert(gsapWpAjax.strings.no_libraries_selected);
-                    e.preventDefault();
                     return false;
                 }
 
                 // Show loading state
-                $(this).find('.button-primary').prop('disabled', true)
-                    .text(gsapWpAjax.strings.saving);
+                $submitButton.prop('disabled', true).text(gsapWpAjax.strings.saving);
+
+                // Submit via AJAX
+                $.ajax({
+                    url: window.location.href,
+                    type: 'POST',
+                    data: $form.serialize(),
+                    success: function(response) {
+                        // Form was submitted successfully, show success message
+                        self.showNotice(gsapWpAjax.strings.saved, 'success');
+
+                        $submitButton.prop('disabled', false).text('Save Settings');
+
+                        // Reload page after 1 second to reflect changes
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    },
+                    error: function() {
+                        self.showNotice(gsapWpAjax.strings.error, 'error');
+                        $submitButton.prop('disabled', false).text('Save Settings');
+                    }
+                });
             });
         },
 
@@ -267,20 +293,42 @@
         showNotice: function(message, type) {
             type = type || 'info';
 
+            // Remove any existing notices first
+            $('.gsap-wp-settings-notice').remove();
+
             const $notice = $('<div>')
-                .addClass('notice notice-' + type + ' is-dismissible')
-                .html('<p>' + message + '</p>')
+                .addClass('notice notice-' + type + ' is-dismissible gsap-wp-settings-notice')
+                .html('<p><strong>' + message + '</strong></p>')
                 .hide();
 
-            $('.wrap h1').after($notice);
+            // Insert after the h1 heading
+            if ($('.gsap-wp-admin .wp-heading-inline').length) {
+                $('.gsap-wp-admin .wp-heading-inline').after($notice);
+            } else {
+                $('.wrap h1').first().after($notice);
+            }
+
             $notice.fadeIn(200);
 
-            // Auto dismiss after 5 seconds
-            setTimeout(function() {
+            // Add dismiss button functionality
+            $notice.append('<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>');
+
+            $notice.on('click', '.notice-dismiss', function() {
                 $notice.fadeOut(200, function() {
                     $(this).remove();
                 });
-            }, 5000);
+            });
+
+            // Auto dismiss after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(function() {
+                    if ($notice.is(':visible')) {
+                        $notice.fadeOut(200, function() {
+                            $(this).remove();
+                        });
+                    }
+                }, 5000);
+            }
         },
 
         /**
