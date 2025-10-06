@@ -139,7 +139,7 @@ class GSAP_WP_Admin {
 
         // Sanitize libraries
         $available_libraries = array(
-            'gsap_core', 'css_plugin', 'scroll_trigger', 'observer', 'flip', 'text_plugin',
+            'gsap_core', 'scroll_trigger', 'observer', 'flip', 'text_plugin',
             'drawsvg', 'morphsvg', 'split_text', 'scroll_smoother', 'gsdev_tools',
             'motion_path', 'draggable', 'inertia', 'physics_2d', 'physics_props',
             'easel', 'pixi', 'scramble_text', 'custom_ease', 'custom_bounce',
@@ -150,6 +150,10 @@ class GSAP_WP_Admin {
         foreach ($available_libraries as $library) {
             $sanitized['libraries'][$library] = isset($input['libraries'][$library]) ? (bool) $input['libraries'][$library] : false;
         }
+
+        // Migration: Remove deprecated libraries from settings
+        // CSSPlugin is built into GSAP Core in GSAP 3.x, so we don't need it separately
+        unset($sanitized['libraries']['css_plugin']);
 
         // Sanitize performance settings
         $sanitized['performance'] = array(

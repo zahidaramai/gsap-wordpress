@@ -81,13 +81,8 @@ class GSAP_WP_GSAP_Loader {
                 'file' => 'gsap.min.js',
                 'dependencies' => array(),
                 'cdn_available' => true,
-                'free' => true
-            ),
-            'css_plugin' => array(
-                'file' => 'CSSPlugin.min.js',
-                'dependencies' => array('gsap_core'),
-                'cdn_available' => true,
-                'free' => true
+                'free' => true,
+                'description' => 'GSAP Core (includes CSSPlugin, Tween, Timeline)'
             ),
             'scroll_trigger' => array(
                 'file' => 'ScrollTrigger.min.js',

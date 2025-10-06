@@ -83,23 +83,15 @@ class GSAP_WP_Settings {
         $this->library_definitions = array(
             'core' => array(
                 'title' => __('Core Libraries', 'gsap-for-wordpress'),
-                'description' => __('Essential GSAP libraries required for basic animations', 'gsap-for-wordpress'),
+                'description' => __('GSAP Core includes CSSPlugin, Tween, and Timeline automatically. You only need to enable this to start animating!', 'gsap-for-wordpress'),
                 'libraries' => array(
                     'gsap_core' => array(
                         'name' => 'GSAP Core',
                         'file' => 'gsap.min.js',
-                        'description' => __('The main GSAP animation engine (required)', 'gsap-for-wordpress'),
+                        'description' => __('Main GSAP engine (includes CSSPlugin, Tween, Timeline)', 'gsap-for-wordpress'),
                         'required' => true,
                         'free' => true,
                         'size' => '47KB'
-                    ),
-                    'css_plugin' => array(
-                        'name' => 'CSS Plugin',
-                        'file' => 'CSSPlugin.min.js',
-                        'description' => __('Enables CSS property animations (recommended)', 'gsap-for-wordpress'),
-                        'required' => false,
-                        'free' => true,
-                        'size' => '12KB'
                     )
                 )
             ),
