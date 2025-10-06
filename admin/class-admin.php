@@ -84,9 +84,101 @@ class GSAP_WP_Admin {
      * Initialize hooks
      */
     private function init_hooks() {
-        add_action('admin_init', array($this, 'handle_form_submissions'));
+        add_action('admin_init', array($this, 'register_settings'), 5);
+        add_action('admin_init', array($this, 'handle_form_submissions'), 10);
         add_action('admin_notices', array($this, 'show_admin_notices'));
         add_action('current_screen', array($this, 'add_help_tabs'));
+        add_action('update_option_gsap_wp_settings', array($this, 'after_settings_save'), 10, 3);
+    }
+
+    /**
+     * Register settings using WordPress Settings API
+     *
+     * @since 1.0.3
+     */
+    public function register_settings() {
+        register_setting(
+            'gsap_wp_settings_group',
+            'gsap_wp_settings',
+            array(
+                'type' => 'array',
+                'description' => 'GSAP for WordPress plugin settings',
+                'sanitize_callback' => array($this, 'sanitize_settings'),
+                'show_in_rest' => false,
+                'default' => array(
+                    'libraries' => array(),
+                    'performance' => array(
+                        'minified' => true,
+                        'load_in_footer' => true,
+                        'auto_merge' => false,
+                        'use_cdn' => false,
+                        'compression' => true,
+                        'cache_busting' => true
+                    ),
+                    'conditional_loading' => array(
+                        'enabled' => false,
+                        'include_pages' => array(),
+                        'exclude_pages' => array(),
+                        'include_post_types' => array(),
+                        'exclude_post_types' => array()
+                    )
+                )
+            )
+        );
+    }
+
+    /**
+     * Sanitize settings before saving
+     *
+     * @param array $input Raw input from form
+     * @return array Sanitized settings
+     * @since 1.0.3
+     */
+    public function sanitize_settings($input) {
+        $sanitized = array();
+
+        // Sanitize libraries
+        $available_libraries = array(
+            'gsap_core', 'css_plugin', 'scroll_trigger', 'observer', 'flip', 'text_plugin',
+            'drawsvg', 'morphsvg', 'split_text', 'scroll_smoother', 'gsdev_tools',
+            'motion_path', 'draggable', 'inertia', 'physics_2d', 'physics_props',
+            'easel', 'pixi', 'scramble_text', 'custom_ease', 'custom_bounce',
+            'custom_wiggle', 'css_rule', 'scroll_to'
+        );
+
+        $sanitized['libraries'] = array();
+        foreach ($available_libraries as $library) {
+            $sanitized['libraries'][$library] = isset($input['libraries'][$library]) ? (bool) $input['libraries'][$library] : false;
+        }
+
+        // Sanitize performance settings
+        $sanitized['performance'] = array(
+            'minified' => isset($input['performance']['minified']) ? (bool) $input['performance']['minified'] : true,
+            'load_in_footer' => isset($input['performance']['load_in_footer']) ? (bool) $input['performance']['load_in_footer'] : true,
+            'auto_merge' => isset($input['performance']['auto_merge']) ? (bool) $input['performance']['auto_merge'] : false,
+            'use_cdn' => isset($input['performance']['use_cdn']) ? (bool) $input['performance']['use_cdn'] : false,
+            'compression' => isset($input['performance']['compression']) ? (bool) $input['performance']['compression'] : true,
+            'cache_busting' => isset($input['performance']['cache_busting']) ? (bool) $input['performance']['cache_busting'] : true
+        );
+
+        // Sanitize conditional loading
+        $sanitized['conditional_loading'] = array(
+            'enabled' => isset($input['conditional_loading']['enabled']) ? (bool) $input['conditional_loading']['enabled'] : false,
+            'include_pages' => isset($input['conditional_loading']['include_pages'])
+                ? array_map('absint', (array) $input['conditional_loading']['include_pages'])
+                : array(),
+            'exclude_pages' => isset($input['conditional_loading']['exclude_pages'])
+                ? array_map('absint', (array) $input['conditional_loading']['exclude_pages'])
+                : array(),
+            'include_post_types' => isset($input['conditional_loading']['include_post_types'])
+                ? array_map('sanitize_key', (array) $input['conditional_loading']['include_post_types'])
+                : array(),
+            'exclude_post_types' => isset($input['conditional_loading']['exclude_post_types'])
+                ? array_map('sanitize_key', (array) $input['conditional_loading']['exclude_post_types'])
+                : array()
+        );
+
+        return $sanitized;
     }
 
     /**
@@ -213,130 +305,21 @@ class GSAP_WP_Admin {
 
     /**
      * Handle form submissions
+     *
+     * Note: Settings form is now handled automatically by WordPress Settings API
+     * via options.php and our sanitize_settings() callback.
+     * This method is kept for future custom form handlers (like file editor).
      */
     public function handle_form_submissions() {
-        // Debug logging
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('GSAP: handle_form_submissions called');
-            error_log('GSAP: REQUEST_METHOD = ' . ($_SERVER['REQUEST_METHOD'] ?? 'not set'));
-            error_log('GSAP: $_GET[page] = ' . ($_GET['page'] ?? 'not set'));
-            error_log('GSAP: $_POST[submit_settings] = ' . (isset($_POST['submit_settings']) ? 'SET' : 'NOT SET'));
-            error_log('GSAP: $_POST keys = ' . implode(', ', array_keys($_POST)));
-        }
-
-        // Only process POST requests
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            return;
-        }
-
-        // Check if we're on the plugin page
-        if (!isset($_GET['page']) || $_GET['page'] !== 'gsap-wordpress') {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('GSAP: Early return - not on plugin page');
-            }
-            return;
-        }
-
-        // Handle settings form submission
-        if (isset($_POST['submit_settings'])) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('GSAP: Submit button detected, checking nonce...');
-            }
-
-            // Check nonce without dying
-            $nonce_check = check_admin_referer('gsap_wp_settings', '_wpnonce', false);
-
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('GSAP: Nonce check result = ' . ($nonce_check ? 'VALID' : 'INVALID'));
-            }
-
-            if ($nonce_check) {
-                $this->handle_settings_submission();
-            } else {
-                // Show user-friendly error
-                add_settings_error(
-                    'gsap_wp_settings',
-                    'nonce_failed',
-                    __('Security verification failed. Please try again.', 'gsap-for-wordpress'),
-                    'error'
-                );
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('GSAP: Nonce verification FAILED');
-                }
-            }
-        }
-
-        // Handle file editor submission (handled via AJAX)
-        // Additional form handlers can be added here
+        // Settings API handles our main settings form automatically
+        // Custom handlers for other forms can be added here
     }
 
     /**
-     * Handle settings form submission
+     * Post-processing after settings save
+     * Called via 'update_option_gsap_wp_settings' hook
      */
-    private function handle_settings_submission() {
-        // Validate user capabilities
-        if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to save these settings.', 'gsap-for-wordpress'));
-        }
-
-        // Get current settings
-        $current_settings = get_option('gsap_wp_settings', array());
-
-        // Process library settings
-        $libraries = isset($_POST['gsap_libraries']) ? (array) $_POST['gsap_libraries'] : array();
-        $sanitized_libraries = array();
-
-        $available_libraries = array(
-            'gsap_core', 'css_plugin', 'scroll_trigger', 'observer', 'flip', 'text_plugin',
-            'drawsvg', 'morphsvg', 'split_text', 'scroll_smoother', 'gsdev_tools',
-            'motion_path', 'draggable', 'inertia', 'physics_2d', 'physics_props',
-            'easel', 'pixi', 'scramble_text', 'custom_ease', 'custom_bounce',
-            'custom_wiggle', 'css_rule', 'scroll_to'
-        );
-
-        foreach ($available_libraries as $library) {
-            $sanitized_libraries[$library] = isset($libraries[$library]) ? true : false;
-        }
-
-        // Process performance settings
-        $performance = array(
-            'minified' => isset($_POST['performance']['minified']) ? true : false,
-            'load_in_footer' => isset($_POST['performance']['load_in_footer']) ? true : false,
-            'auto_merge' => isset($_POST['performance']['auto_merge']) ? true : false,
-            'use_cdn' => isset($_POST['performance']['use_cdn']) ? true : false,
-            'compression' => isset($_POST['performance']['compression']) ? true : false,
-            'cache_busting' => isset($_POST['performance']['cache_busting']) ? true : false
-        );
-
-        // Process conditional loading settings
-        $conditional_loading = array(
-            'enabled' => isset($_POST['conditional_loading']['enabled']) ? true : false,
-            'include_pages' => isset($_POST['conditional_loading']['include_pages'])
-                ? array_map('intval', (array) $_POST['conditional_loading']['include_pages'])
-                : array(),
-            'exclude_pages' => isset($_POST['conditional_loading']['exclude_pages'])
-                ? array_map('intval', (array) $_POST['conditional_loading']['exclude_pages'])
-                : array(),
-            'include_post_types' => isset($_POST['conditional_loading']['include_post_types'])
-                ? array_map('sanitize_text_field', (array) $_POST['conditional_loading']['include_post_types'])
-                : array(),
-            'exclude_post_types' => isset($_POST['conditional_loading']['exclude_post_types'])
-                ? array_map('sanitize_text_field', (array) $_POST['conditional_loading']['exclude_post_types'])
-                : array()
-        );
-
-        // Update settings
-        $new_settings = array(
-            'libraries' => $sanitized_libraries,
-            'performance' => $performance,
-            'conditional_loading' => $conditional_loading
-        );
-
-        update_option('gsap_wp_settings', $new_settings);
-
-        // Force flush rewrite rules to ensure changes take effect immediately
-        flush_rewrite_rules();
-
+    public function after_settings_save($old_value, $new_value, $option_name) {
         // Clear any cached data
         $this->clear_cache();
 
@@ -346,35 +329,20 @@ class GSAP_WP_Admin {
 
         // Log the settings change
         if (class_exists('GSAP_WP_Security')) {
+            $library_count = isset($new_value['libraries']) ? count(array_filter($new_value['libraries'])) : 0;
             GSAP_WP_Security::get_instance()->log_security_event(
                 'settings_updated',
                 'GSAP settings were updated',
                 array(
                     'user_id' => get_current_user_id(),
-                    'libraries_count' => count(array_filter($sanitized_libraries)),
-                    'performance' => $performance
+                    'libraries_count' => $library_count,
+                    'performance' => isset($new_value['performance']) ? $new_value['performance'] : array()
                 )
             );
         }
 
         // Trigger action for other plugins
-        do_action('gsap_wp_settings_updated', $new_settings, $current_settings);
-
-        // Set transient for success message (to survive redirect)
-        set_transient('gsap_wp_settings_updated', true, 30);
-
-        // Redirect to avoid form resubmission
-        $redirect_url = add_query_arg(
-            array(
-                'page' => 'gsap-wordpress',
-                'tab' => 'settings',
-                'settings-updated' => 'true'
-            ),
-            admin_url('admin.php')
-        );
-
-        wp_safe_redirect($redirect_url);
-        exit;
+        do_action('gsap_wp_settings_updated', $new_value, $old_value);
     }
 
     /**
@@ -386,49 +354,47 @@ class GSAP_WP_Admin {
             return;
         }
 
-        // Show settings saved message
-        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
-            if (get_transient('gsap_wp_settings_updated')) {
-                $settings = get_option('gsap_wp_settings', array());
-                $library_count = isset($settings['libraries']) ? count(array_filter($settings['libraries'])) : 0;
-                ?>
-                <div class="notice notice-success is-dismissible gsap-wp-success-notice">
-                    <p>
-                        <span class="dashicons dashicons-yes-alt"></span>
-                        <strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong>
-                        <?php
-                        if ($library_count > 0) {
-                            printf(
-                                _n(
-                                    '%d GSAP library is now active on your website.',
-                                    '%d GSAP libraries are now active on your website.',
-                                    $library_count,
-                                    'gsap-for-wordpress'
-                                ),
-                                $library_count
-                            );
-                        } else {
-                            _e('No GSAP libraries are currently active. Enable libraries below to start using GSAP.', 'gsap-for-wordpress');
-                        }
-                        ?>
-                    </p>
-                </div>
-                <script type="text/javascript">
-                jQuery(document).ready(function($) {
-                    // Auto-dismiss after 7 seconds
-                    setTimeout(function() {
-                        $('.gsap-wp-success-notice').fadeOut(300, function() {
-                            $(this).remove();
-                        });
-                    }, 7000);
-                });
-                </script>
-                <?php
-                delete_transient('gsap_wp_settings_updated');
-            }
-        }
-
+        // Display settings errors/success messages from Settings API
         settings_errors('gsap_wp_settings');
+
+        // Show enhanced settings saved message
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
+            $settings = get_option('gsap_wp_settings', array());
+            $library_count = isset($settings['libraries']) ? count(array_filter($settings['libraries'])) : 0;
+            ?>
+            <div class="notice notice-success is-dismissible gsap-wp-success-notice">
+                <p>
+                    <span class="dashicons dashicons-yes-alt"></span>
+                    <strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong>
+                    <?php
+                    if ($library_count > 0) {
+                        printf(
+                            _n(
+                                '%d GSAP library is now active on your website.',
+                                '%d GSAP libraries are now active on your website.',
+                                $library_count,
+                                'gsap-for-wordpress'
+                            ),
+                            $library_count
+                        );
+                    } else {
+                        _e('No GSAP libraries are currently active. Enable libraries below to start using GSAP.', 'gsap-for-wordpress');
+                    }
+                    ?>
+                </p>
+            </div>
+            <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                // Auto-dismiss after 7 seconds
+                setTimeout(function() {
+                    $('.gsap-wp-success-notice').fadeOut(300, function() {
+                        $(this).remove();
+                    });
+                }, 7000);
+            });
+            </script>
+            <?php
+        }
 
         // Show activation notice
         if (get_option('gsap_wp_activated', false)) {
