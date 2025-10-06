@@ -122,6 +122,12 @@
                 }
             });
 
+            // Confirm restore button
+            $(document).on('click', '.gsap-wp-confirm-restore', function(e) {
+                e.preventDefault();
+                self.confirmRestore();
+            });
+
             // Modal close handlers
             $('.gsap-wp-modal-close, .gsap-wp-modal').on('click', function(e) {
                 if ($(e.target).hasClass('gsap-wp-modal') || $(e.target).hasClass('gsap-wp-modal-close')) {
@@ -534,13 +540,64 @@
         },
 
         /**
-         * Restore version
+         * Restore version (with confirmation modal)
          */
         restoreVersion: function(versionId) {
-            if (!confirm('Are you sure you want to restore this version? Current content will be backed up.')) {
-                return;
-            }
+            const self = this;
 
+            // Load version info and diff
+            $.ajax({
+                url: gsapWpAjax.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'gsap_wp_load_version',
+                    nonce: gsapWpAjax.nonce,
+                    version_id: versionId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showRestoreConfirmation(versionId, response.data);
+                    } else {
+                        self.showNotice(response.data || 'Failed to load version', 'error');
+                    }
+                },
+                error: function() {
+                    self.showNotice('An error occurred while loading version', 'error');
+                }
+            });
+        },
+
+        /**
+         * Show restore confirmation modal with diff preview
+         */
+        showRestoreConfirmation: function(versionId, versionData) {
+            const self = this;
+            const currentContent = this.getEditorContent();
+
+            // Populate version info
+            const versionInfo = `
+                <p><strong>Version:</strong> ${versionData.version_number}</p>
+                <p><strong>Created:</strong> ${versionData.created_at}</p>
+                ${versionData.user_comment ? `<p><strong>Comment:</strong> ${versionData.user_comment}</p>` : ''}
+            `;
+            $('#gsap-wp-restore-version-info').html(versionInfo);
+
+            // Generate diff between current and version content
+            const diffHtml = this.generateDiffHTML(currentContent, versionData.content);
+            $('#gsap-wp-restore-diff-preview').html(diffHtml);
+
+            // Store version ID for confirmation
+            $('#gsap-wp-restore-confirm-modal').data('version-id', versionId);
+
+            // Show modal
+            $('#gsap-wp-restore-confirm-modal').fadeIn(200);
+        },
+
+        /**
+         * Confirm and execute restore
+         */
+        confirmRestore: function() {
+            const versionId = $('#gsap-wp-restore-confirm-modal').data('version-id');
             const self = this;
 
             $.ajax({
@@ -554,6 +611,7 @@
                 success: function(response) {
                     if (response.success) {
                         self.showNotice(response.data.message || 'Version restored successfully!', 'success');
+                        $('#gsap-wp-restore-confirm-modal').fadeOut(200);
                         location.reload();
                     } else {
                         self.showNotice(response.data || 'Failed to restore version', 'error');
@@ -563,6 +621,91 @@
                     self.showNotice('An error occurred while restoring version', 'error');
                 }
             });
+        },
+
+        /**
+         * Generate HTML diff view
+         */
+        generateDiffHTML: function(oldContent, newContent) {
+            const oldLines = oldContent.split('\n');
+            const newLines = newContent.split('\n');
+            let html = '<div class="gsap-wp-diff-container">';
+
+            // Diff header
+            let additions = 0;
+            let deletions = 0;
+
+            // Simple line-by-line diff
+            const maxLines = Math.max(oldLines.length, newLines.length);
+
+            html += '<div class="gsap-wp-diff-body">';
+
+            for (let i = 0; i < maxLines; i++) {
+                const oldLine = oldLines[i] !== undefined ? oldLines[i] : null;
+                const newLine = newLines[i] !== undefined ? newLines[i] : null;
+
+                if (oldLine === newLine && oldLine !== null) {
+                    // Context line (unchanged)
+                    html += `<div class="gsap-wp-diff-line diff-line-context">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                } else if (oldLine === null) {
+                    // Addition
+                    additions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-add">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(newLine)}
+                    </div>`;
+                } else if (newLine === null) {
+                    // Deletion
+                    deletions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-remove">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                } else {
+                    // Changed line
+                    deletions++;
+                    additions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-remove">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                    html += `<div class="gsap-wp-diff-line diff-line-add">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(newLine)}
+                    </div>`;
+                }
+            }
+
+            html += '</div>';
+
+            // Add stats
+            if (additions === 0 && deletions === 0) {
+                html = '<div class="gsap-wp-no-diff"><span class="dashicons dashicons-yes-alt"></span><p>No changes detected</p></div>';
+            } else {
+                // Prepend header with stats
+                html = `<div class="gsap-wp-diff-header">
+                    <h4>Changes Preview</h4>
+                    <div class="gsap-wp-diff-stats">
+                        <span class="additions">+${additions}</span>
+                        <span class="deletions">-${deletions}</span>
+                    </div>
+                </div>` + html;
+            }
+
+            html += '</div>';
+            return html;
+        },
+
+        /**
+         * Escape HTML
+         */
+        escapeHtml: function(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         },
 
         /**

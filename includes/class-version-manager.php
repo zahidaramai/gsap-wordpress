@@ -551,38 +551,76 @@ class GSAP_WP_Version_Manager {
         $lines2 = explode("\n", $content2);
 
         $diff = array();
+        $additions = 0;
+        $deletions = 0;
+        $line1_num = 1;
+        $line2_num = 1;
+
         $max_lines = max(count($lines1), count($lines2));
 
         for ($i = 0; $i < $max_lines; $i++) {
-            $line1 = isset($lines1[$i]) ? $lines1[$i] : '';
-            $line2 = isset($lines2[$i]) ? $lines2[$i] : '';
+            $line1 = isset($lines1[$i]) ? $lines1[$i] : null;
+            $line2 = isset($lines2[$i]) ? $lines2[$i] : null;
 
-            if ($line1 === $line2) {
+            if ($line1 === $line2 && $line1 !== null) {
+                // Equal lines
                 $diff[] = array(
-                    'type' => 'equal',
-                    'line1' => $line1,
-                    'line2' => $line2,
-                    'line_number' => $i + 1
+                    'type' => 'context',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => $line2_num
                 );
+                $line1_num++;
+                $line2_num++;
+            } elseif ($line1 === null && $line2 !== null) {
+                // Addition (line only in version 2)
+                $diff[] = array(
+                    'type' => 'add',
+                    'content' => $line2,
+                    'old_line' => null,
+                    'new_line' => $line2_num
+                );
+                $additions++;
+                $line2_num++;
+            } elseif ($line2 === null && $line1 !== null) {
+                // Deletion (line only in version 1)
+                $diff[] = array(
+                    'type' => 'remove',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => null
+                );
+                $deletions++;
+                $line1_num++;
             } else {
-                if (!empty($line1)) {
-                    $diff[] = array(
-                        'type' => 'delete',
-                        'line' => $line1,
-                        'line_number' => $i + 1
-                    );
-                }
-                if (!empty($line2)) {
-                    $diff[] = array(
-                        'type' => 'insert',
-                        'line' => $line2,
-                        'line_number' => $i + 1
-                    );
-                }
+                // Changed line (treat as delete + add)
+                $diff[] = array(
+                    'type' => 'remove',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => null
+                );
+                $diff[] = array(
+                    'type' => 'add',
+                    'content' => $line2,
+                    'old_line' => null,
+                    'new_line' => $line2_num
+                );
+                $deletions++;
+                $additions++;
+                $line1_num++;
+                $line2_num++;
             }
         }
 
-        return $diff;
+        return array(
+            'lines' => $diff,
+            'stats' => array(
+                'additions' => $additions,
+                'deletions' => $deletions,
+                'total_changes' => $additions + $deletions
+            )
+        );
     }
 
     /**

@@ -436,6 +436,60 @@ class GSAP_WP_File_Editor {
                 </div>
             </div>
         </div>
+
+        <!-- Diff View Modal -->
+        <div id="gsap-wp-diff-modal" class="gsap-wp-modal" style="display: none;">
+            <div class="gsap-wp-modal-content" style="max-width: 900px;">
+                <div class="gsap-wp-modal-header">
+                    <h3><?php _e('Version Comparison', 'gsap-for-wordpress'); ?></h3>
+                    <button type="button" class="gsap-wp-modal-close">&times;</button>
+                </div>
+                <div class="gsap-wp-modal-body">
+                    <div id="gsap-wp-diff-content"></div>
+                </div>
+                <div class="gsap-wp-modal-actions">
+                    <button type="button" class="button button-secondary gsap-wp-modal-close">
+                        <?php _e('Close', 'gsap-for-wordpress'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Confirmation Modal -->
+        <div id="gsap-wp-restore-confirm-modal" class="gsap-wp-modal" style="display: none;">
+            <div class="gsap-wp-modal-content">
+                <div class="gsap-wp-modal-header">
+                    <h3><?php _e('Restore Version', 'gsap-for-wordpress'); ?></h3>
+                    <button type="button" class="gsap-wp-modal-close">&times;</button>
+                </div>
+                <div class="gsap-wp-modal-body gsap-wp-restore-preview">
+                    <div class="gsap-wp-restore-info">
+                        <h4><?php _e('Version Information', 'gsap-for-wordpress'); ?></h4>
+                        <div id="gsap-wp-restore-version-info"></div>
+                    </div>
+
+                    <div class="gsap-wp-restore-warning">
+                        <span class="dashicons dashicons-warning"></span>
+                        <div>
+                            <strong><?php _e('Warning:', 'gsap-for-wordpress'); ?></strong>
+                            <?php _e('Your current content will be automatically backed up before restoring. You can always revert to it later.', 'gsap-for-wordpress'); ?>
+                        </div>
+                    </div>
+
+                    <h4><?php _e('Changes Preview:', 'gsap-for-wordpress'); ?></h4>
+                    <div id="gsap-wp-restore-diff-preview"></div>
+                </div>
+                <div class="gsap-wp-modal-actions">
+                    <button type="button" class="button button-primary gsap-wp-confirm-restore">
+                        <span class="dashicons dashicons-undo"></span>
+                        <?php _e('Restore This Version', 'gsap-for-wordpress'); ?>
+                    </button>
+                    <button type="button" class="button button-secondary gsap-wp-modal-close">
+                        <?php _e('Cancel', 'gsap-for-wordpress'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
         <?php
     }
 
@@ -762,10 +816,10 @@ document.addEventListener("DOMContentLoaded", function() {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
