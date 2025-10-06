@@ -972,6 +972,24 @@
     border-top: 1px solid #e1e5e9;
 }
 
+.gsap-wp-modal-actions .button {
+    min-width: 100px;
+    text-align: center;
+    padding: 6px 16px;
+    height: auto;
+}
+
+.gsap-wp-modal-actions .button-secondary {
+    background: #f6f7f7;
+    border-color: #dcdcde;
+    color: #2c3338;
+}
+
+.gsap-wp-modal-actions .button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
 /* ==========================================================================
    Form Elements
    ========================================================================== */
