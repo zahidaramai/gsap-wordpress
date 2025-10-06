@@ -1,15 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)",
-      "Bash(find:*)",
-      "Read(//Users/zahidaramai/**)",
-      "Bash(wp option get:*)",
-      "Bash(php:*)",
-      "Bash(for file in \"/Users/zahidaramai/Local Sites/gsap-wordpress/includes/class-file-manager.php\" \"/Users/zahidaramai/Local Sites/gsap-wordpress/includes/class-version-manager.php\" \"/Users/zahidaramai/Local Sites/gsap-wordpress/includes/class-gsap-loader.php\" \"/Users/zahidaramai/Local Sites/gsap-wordpress/gsap-for-wordpress.php\")",
-      "Bash(do echo \"Checking: $file\")",
-      "Bash(done)",
-      "Bash(git push:*)"
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
