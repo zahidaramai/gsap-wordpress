@@ -161,7 +161,13 @@ class GSAP_WP_File_Editor {
                 <!-- Left sidebar with file tree and version history -->
                 <div class="gsap-wp-file-tree">
                     <?php $this->render_file_tree(); ?>
-                    <?php $this->render_version_history(); ?>
+                    <?php
+                    // Render full version control panel with restore buttons
+                    if (class_exists('GSAP_WP_Version_Control')) {
+                        $version_control = GSAP_WP_Version_Control::get_instance();
+                        $version_control->render_version_panel($this->current_file);
+                    }
+                    ?>
                 </div>
 
                 <!-- Main editor area -->
@@ -217,62 +223,19 @@ class GSAP_WP_File_Editor {
     }
 
     /**
-     * Render version history
+     * Render version history (DEPRECATED - replaced by GSAP_WP_Version_Control::render_version_panel)
+     *
+     * @deprecated Since version 1.0.0 - Use GSAP_WP_Version_Control::render_version_panel() instead
+     * @see GSAP_WP_Version_Control::render_version_panel()
      */
     private function render_version_history() {
-        if (!class_exists('GSAP_WP_Version_Manager')) {
-            return;
+        // This method has been replaced by the full version control panel
+        // which includes restore buttons, diff view, and delete functionality.
+        // See: admin/class-version-control.php
+        if (class_exists('GSAP_WP_Version_Control')) {
+            $version_control = GSAP_WP_Version_Control::get_instance();
+            $version_control->render_version_panel($this->current_file);
         }
-
-        $version_manager = GSAP_WP_Version_Manager::get_instance();
-        $versions = $version_manager->get_file_versions($this->current_file);
-        ?>
-        <div class="gsap-wp-version-history-section">
-            <h3>
-                <span class="dashicons dashicons-backup"></span>
-                <?php _e('Version History', 'gsap-for-wordpress'); ?>
-            </h3>
-
-            <?php if (empty($versions)): ?>
-                <p class="gsap-wp-no-versions">
-                    <?php _e('No versions saved yet.', 'gsap-for-wordpress'); ?>
-                </p>
-            <?php else: ?>
-                <ul class="gsap-wp-version-list">
-                    <?php foreach (array_slice($versions, 0, 5) as $version): ?>
-                        <li class="gsap-wp-version-item">
-                            <button type="button" class="gsap-wp-version-link"
-                                    data-version-id="<?php echo esc_attr($version->id); ?>">
-                                <div class="gsap-wp-version-info">
-                                    <div class="gsap-wp-version-number">
-                                        v<?php echo esc_html($version->version_number); ?>
-                                    </div>
-                                    <div class="gsap-wp-version-date">
-                                        <?php echo esc_html(mysql2date('M j, Y g:i A', $version->created_at)); ?>
-                                    </div>
-                                    <?php if (!empty($version->user_comment)): ?>
-                                        <div class="gsap-wp-version-comment">
-                                            <?php echo esc_html($version->user_comment); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </button>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <?php if (count($versions) > 5): ?>
-                    <button type="button" class="button button-small gsap-wp-view-all-versions">
-                        <?php _e('View All Versions', 'gsap-for-wordpress'); ?>
-                    </button>
-                <?php endif; ?>
-            <?php endif; ?>
-
-            <button type="button" class="button button-primary gsap-wp-create-version">
-                <?php _e('Create Version', 'gsap-for-wordpress'); ?>
-            </button>
-        </div>
-        <?php
     }
 
     /**
