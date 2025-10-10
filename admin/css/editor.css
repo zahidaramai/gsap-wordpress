@@ -58,11 +58,22 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 15px;
+    position: relative;
 }
 
 .gsap-wp-version-item:hover {
     border-color: #2271b1;
     box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+}
+
+.gsap-wp-version-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    flex: 1;
+    min-width: 0;
 }
 
 .gsap-wp-version-info {
@@ -124,6 +135,12 @@
     gap: 6px;
     flex-shrink: 0;
     flex-wrap: wrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.gsap-wp-version-item:hover .gsap-wp-version-actions {
+    opacity: 1;
 }
 
 .gsap-wp-version-actions .button {

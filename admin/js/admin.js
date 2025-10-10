@@ -154,44 +154,21 @@
          * Initialize form validation
          */
         initFormValidation: function() {
-            const self = this;
-
             $('.gsap-wp-settings-form').on('submit', function(e) {
-                e.preventDefault(); // Prevent default form submission
-
-                const $form = $(this);
-                const $submitButton = $form.find('button[name="submit_settings"]');
                 const $checkedLibraries = $('.gsap-wp-library-checkbox:checked').not(':disabled');
 
                 if ($checkedLibraries.length === 0) {
                     alert(gsapWpAjax.strings.no_libraries_selected);
+                    e.preventDefault();
                     return false;
                 }
 
-                // Show loading state
-                $submitButton.prop('disabled', true).text(gsapWpAjax.strings.saving);
+                // Show loading state (form will submit normally)
+                $(this).find('.button-primary').prop('disabled', true)
+                    .text(gsapWpAjax.strings.saving);
 
-                // Submit via AJAX
-                $.ajax({
-                    url: window.location.href,
-                    type: 'POST',
-                    data: $form.serialize(),
-                    success: function(response) {
-                        // Form was submitted successfully, show success message
-                        self.showNotice(gsapWpAjax.strings.saved, 'success');
-
-                        $submitButton.prop('disabled', false).text('Save Settings');
-
-                        // Reload page after 1 second to reflect changes
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1500);
-                    },
-                    error: function() {
-                        self.showNotice(gsapWpAjax.strings.error, 'error');
-                        $submitButton.prop('disabled', false).text('Save Settings');
-                    }
-                });
+                // Allow normal form submission to proceed
+                return true;
             });
         },
 

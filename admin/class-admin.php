@@ -336,14 +336,12 @@ class GSAP_WP_Admin {
 
         // Show settings saved message
         if (isset($_GET['settings-updated']) && $_GET['settings-updated'] === 'true') {
-            if (get_transient('gsap_wp_settings_updated')) {
-                ?>
-                <div class="notice notice-success is-dismissible">
-                    <p><strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong></p>
-                </div>
-                <?php
-                delete_transient('gsap_wp_settings_updated');
-            }
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><strong><?php _e('Settings saved successfully!', 'gsap-for-wordpress'); ?></strong></p>
+            </div>
+            <?php
+            delete_transient('gsap_wp_settings_updated');
         }
 
         settings_errors('gsap_wp_settings');

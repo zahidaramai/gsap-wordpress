@@ -94,17 +94,38 @@ class GSAP_WP_Version_Manager {
         // Get next version number
         $version_number = $this->get_next_version_number($file_path);
 
+        // Get previous version to calculate diff
+        $previous_version = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$this->table_name} WHERE file_path = %s ORDER BY version_number DESC LIMIT 1",
+            $file_path
+        ));
+
+        // For first version, store full content. For subsequent versions, store diff
+        $content_to_store = $content;
+        $is_diff = 0;
+
+        if ($previous_version && $version_number > 1) {
+            // Reconstruct previous content
+            $previous_content = $this->reconstruct_content($file_path, $previous_version->version_number);
+
+            // Generate diff
+            $diff = $this->generate_unified_diff($previous_content, $content);
+            $content_to_store = $diff;
+            $is_diff = 1;
+        }
+
         // Insert version
         $result = $wpdb->insert(
             $this->table_name,
             array(
                 'file_path' => sanitize_text_field($file_path),
-                'content' => $content,
+                'content' => $content_to_store,
                 'version_number' => $version_number,
                 'user_comment' => sanitize_textarea_field($comment),
-                'created_by' => get_current_user_id()
+                'created_by' => get_current_user_id(),
+                'is_diff' => $is_diff
             ),
-            array('%s', '%s', '%d', '%s', '%d')
+            array('%s', '%s', '%d', '%s', '%d', '%d')
         );
 
         if ($result === false) {
@@ -346,8 +367,11 @@ class GSAP_WP_Version_Manager {
             wp_send_json_error(__('Version not found.', 'gsap-for-wordpress'));
         }
 
+        // Reconstruct content from diffs
+        $content = $this->reconstruct_content($version->file_path, $version->version_number);
+
         wp_send_json_success(array(
-            'content' => $version->content,
+            'content' => $content,
             'version' => array(
                 'id' => $version->id,
                 'version_number' => $version->version_number,
@@ -619,6 +643,144 @@ class GSAP_WP_Version_Manager {
         }
 
         return $imported_count;
+    }
+
+    /**
+     * Generate unified diff between two contents (like Git)
+     *
+     * @param string $old_content
+     * @param string $new_content
+     * @return string Unified diff format
+     */
+    private function generate_unified_diff($old_content, $new_content) {
+        $old_lines = explode("\n", $old_content);
+        $new_lines = explode("\n", $new_content);
+
+        $diff = array();
+        $i = 0;
+        $j = 0;
+
+        while ($i < count($old_lines) || $j < count($new_lines)) {
+            if ($i < count($old_lines) && $j < count($new_lines) && $old_lines[$i] === $new_lines[$j]) {
+                // Lines are the same
+                $diff[] = ' ' . $old_lines[$i];
+                $i++;
+                $j++;
+            } elseif ($i < count($old_lines) && ($j >= count($new_lines) || $old_lines[$i] !== $new_lines[$j])) {
+                // Line was removed
+                $diff[] = '-' . $old_lines[$i];
+                $i++;
+            } else {
+                // Line was added
+                $diff[] = '+' . $new_lines[$j];
+                $j++;
+            }
+        }
+
+        return implode("\n", $diff);
+    }
+
+    /**
+     * Apply diff to content
+     *
+     * @param string $base_content
+     * @param string $diff
+     * @return string
+     */
+    private function apply_diff($base_content, $diff) {
+        $base_lines = explode("\n", $base_content);
+        $diff_lines = explode("\n", $diff);
+
+        $result = array();
+        $base_index = 0;
+
+        foreach ($diff_lines as $diff_line) {
+            if (empty($diff_line)) {
+                continue;
+            }
+
+            $operation = $diff_line[0];
+            $line_content = substr($diff_line, 1);
+
+            switch ($operation) {
+                case ' ':
+                    // Unchanged line
+                    $result[] = $line_content;
+                    $base_index++;
+                    break;
+                case '-':
+                    // Removed line - skip in base
+                    $base_index++;
+                    break;
+                case '+':
+                    // Added line
+                    $result[] = $line_content;
+                    break;
+            }
+        }
+
+        return implode("\n", $result);
+    }
+
+    /**
+     * Reconstruct content from version history
+     *
+     * @param string $file_path
+     * @param int $target_version_number
+     * @return string
+     */
+    private function reconstruct_content($file_path, $target_version_number) {
+        global $wpdb;
+
+        // Get all versions up to target version
+        $versions = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$this->table_name}
+             WHERE file_path = %s AND version_number <= %d
+             ORDER BY version_number ASC",
+            $file_path,
+            $target_version_number
+        ));
+
+        if (empty($versions)) {
+            return '';
+        }
+
+        // Start with first version (always full content)
+        $content = $versions[0]->content;
+
+        // Apply diffs sequentially
+        for ($i = 1; $i < count($versions); $i++) {
+            $version = $versions[$i];
+
+            // Check if version has is_diff field
+            $is_diff = isset($version->is_diff) ? $version->is_diff : 0;
+
+            if ($is_diff) {
+                $content = $this->apply_diff($content, $version->content);
+            } else {
+                // If not a diff, use full content (backward compatibility)
+                $content = $version->content;
+            }
+        }
+
+        return $content;
+    }
+
+    /**
+     * Get reconstructed version content
+     *
+     * @param int $version_id
+     * @return string|WP_Error
+     */
+    public function get_version_content($version_id) {
+        $version = $this->get_version($version_id);
+
+        if (!$version) {
+            return new WP_Error('version_not_found', __('Version not found.', 'gsap-for-wordpress'));
+        }
+
+        // Reconstruct content from version history
+        return $this->reconstruct_content($version->file_path, $version->version_number);
     }
 
     /**

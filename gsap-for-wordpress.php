@@ -561,6 +561,7 @@ final class GSAP_For_WordPress {
             user_comment text,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             created_by bigint(20) unsigned NOT NULL,
+            is_diff tinyint(1) DEFAULT 0,
             PRIMARY KEY (id),
             KEY file_path (file_path),
             KEY created_at (created_at)

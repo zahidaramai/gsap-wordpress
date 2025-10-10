@@ -240,8 +240,8 @@ class GSAP_WP_File_Editor {
             <?php else: ?>
                 <ul class="gsap-wp-version-list">
                     <?php foreach (array_slice($versions, 0, 5) as $version): ?>
-                        <li class="gsap-wp-version-item">
-                            <button type="button" class="gsap-wp-version-link"
+                        <li class="gsap-wp-version-item" data-version-id="<?php echo esc_attr($version->id); ?>">
+                            <button type="button" class="gsap-wp-version-link gsap-wp-view-version"
                                     data-version-id="<?php echo esc_attr($version->id); ?>">
                                 <div class="gsap-wp-version-info">
                                     <div class="gsap-wp-version-number">
@@ -257,6 +257,14 @@ class GSAP_WP_File_Editor {
                                     <?php endif; ?>
                                 </div>
                             </button>
+                            <div class="gsap-wp-version-actions">
+                                <button type="button" class="button button-small gsap-wp-restore-version"
+                                        data-version-id="<?php echo esc_attr($version->id); ?>"
+                                        title="<?php esc_attr_e('Restore this version', 'gsap-for-wordpress'); ?>">
+                                    <span class="dashicons dashicons-undo"></span>
+                                    <?php _e('Restore', 'gsap-for-wordpress'); ?>
+                                </button>
+                            </div>
                         </li>
                     <?php endforeach; ?>
                 </ul>
