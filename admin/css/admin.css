@@ -568,6 +568,11 @@
 .gsap-wp-version-item {
     margin-bottom: 8px;
     position: relative;
+    transition: all 0.2s ease;
+}
+
+.gsap-wp-version-item:hover {
+    transform: translateX(2px);
 }
 
 .gsap-wp-version-link {
@@ -654,6 +659,279 @@
     height: 32px;
 }
 
+/* Version Item Actions - Hidden by default, shown on hover */
+.gsap-wp-version-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateX(-5px);
+}
+
+.gsap-wp-version-item:hover .gsap-wp-version-actions {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Keep actions visible when focused */
+.gsap-wp-version-actions:focus-within {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ==========================================================================
+   Restore History Timeline
+   ========================================================================== */
+
+.gsap-wp-restore-history-section {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid #e1e5e9;
+}
+
+.gsap-wp-restore-history-container h3 {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gsap-wp-restore-history-container h3 .dashicons {
+    color: #2271b1;
+}
+
+.gsap-wp-no-restore-history {
+    text-align: center;
+    padding: 30px 20px;
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 4px;
+}
+
+.gsap-wp-no-restore-history .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #9ca3af;
+    display: block;
+    margin: 0 auto 10px;
+}
+
+.gsap-wp-no-restore-history p {
+    margin: 0;
+    font-size: 13px;
+    color: #646970;
+}
+
+/* Restore Timeline - Git-like style */
+.gsap-wp-restore-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+/* Timeline vertical line */
+.gsap-wp-restore-timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: linear-gradient(to bottom, #2271b1 0%, #e1e5e9 100%);
+}
+
+.gsap-wp-restore-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+}
+
+.gsap-wp-restore-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Git-style commit marker */
+.gsap-wp-restore-marker {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    background: #2271b1;
+    border: 3px solid #f8f9fa;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #2271b1;
+    z-index: 1;
+}
+
+.gsap-wp-restore-item:hover .gsap-wp-restore-marker {
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}
+
+.gsap-wp-restore-content {
+    background: #fff;
+    border: 1px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 12px 15px;
+    transition: all 0.2s ease;
+}
+
+.gsap-wp-restore-item:hover .gsap-wp-restore-content {
+    background: #f0f6fc;
+    border-color: #2271b1;
+    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+}
+
+.gsap-wp-restore-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 10px;
+}
+
+.gsap-wp-restore-action {
+    font-size: 13px;
+    color: #1d2327;
+    font-weight: 600;
+}
+
+.gsap-wp-restore-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+.gsap-wp-restore-badge.manual {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.gsap-wp-restore-badge.auto {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.gsap-wp-restore-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #646970;
+    margin-bottom: 6px;
+}
+
+.gsap-wp-restore-separator {
+    color: #9ca3af;
+}
+
+.gsap-wp-restore-date {
+    font-weight: 600;
+}
+
+.gsap-wp-restore-notes {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #f8f9fa;
+    border-left: 3px solid #2271b1;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #2c3338;
+    font-style: italic;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.gsap-wp-restore-notes .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #2271b1;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.gsap-wp-restore-version-comment {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #646970;
+    padding-left: 0;
+}
+
+.gsap-wp-restore-pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.gsap-wp-load-more-restores {
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   Success Notice Enhancement
+   ========================================================================== */
+
+.gsap-wp-success-notice {
+	border-left-color: #00a32a !important;
+	background: #f0f9f4 !important;
+	animation: gsapSlideInDown 0.4s ease-out;
+	box-shadow: 0 2px 8px rgba(0, 163, 42, 0.1);
+	transition: all 0.3s ease;
+}
+
+.gsap-wp-success-notice.highlighted {
+	transform: scale(1.01);
+	box-shadow: 0 4px 16px rgba(0, 163, 42, 0.2);
+}
+
+.gsap-wp-success-notice p {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0.5em 0;
+}
+
+.gsap-wp-success-notice .dashicons {
+	color: #00a32a;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+}
+
+.gsap-wp-success-notice strong {
+	color: #00a32a;
+}
+
+/* Success notice slide in animation */
+@keyframes gsapSlideInDown {
+	from {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Pulse animation for extra emphasis */
+.gsap-wp-success-notice.highlighted .dashicons {
+	animation: gsapPulse 1s ease-in-out;
+}
+
+@keyframes gsapPulse {
+	0%, 100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.2);
+	}
+}
+
 /* ==========================================================================
    Modal Styles
    ========================================================================== */
@@ -727,6 +1005,219 @@
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #e1e5e9;
+}
+
+.gsap-wp-modal-actions .button {
+    min-width: 100px;
+    text-align: center;
+    padding: 6px 16px;
+    height: auto;
+}
+
+.gsap-wp-modal-actions .button-secondary {
+    background: #f6f7f7;
+    border-color: #dcdcde;
+    color: #2c3338;
+}
+
+.gsap-wp-modal-actions .button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+/* ==========================================================================
+   Diff View Styles (Git-Style)
+   ========================================================================== */
+
+.gsap-wp-diff-container {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 6px;
+    overflow: hidden;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.gsap-wp-diff-header {
+    background: #2d2d30;
+    padding: 12px 15px;
+    border-bottom: 1px solid #3e3e42;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gsap-wp-diff-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #cccccc;
+}
+
+.gsap-wp-diff-stats {
+    font-size: 12px;
+    color: #858585;
+}
+
+.gsap-wp-diff-stats .additions {
+    color: #4ec9b0;
+    margin-right: 10px;
+}
+
+.gsap-wp-diff-stats .deletions {
+    color: #f48771;
+}
+
+.gsap-wp-diff-body {
+    padding: 0;
+}
+
+.gsap-wp-diff-line {
+    padding: 2px 10px 2px 50px;
+    margin: 0;
+    position: relative;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.gsap-wp-diff-line-number {
+    position: absolute;
+    left: 0;
+    width: 45px;
+    text-align: right;
+    padding-right: 10px;
+    color: #858585;
+    user-select: none;
+    font-size: 11px;
+}
+
+.diff-line-add {
+    background: #1e4620;
+    border-left: 3px solid #487e49;
+}
+
+.diff-line-add .gsap-wp-diff-line-number {
+    background: #2d5a2e;
+}
+
+.diff-line-add::before {
+    content: "+";
+    position: absolute;
+    left: 48px;
+    color: #4ec9b0;
+    font-weight: bold;
+}
+
+.diff-line-remove {
+    background: #4b1818;
+    border-left: 3px solid #8b3a3a;
+}
+
+.diff-line-remove .gsap-wp-diff-line-number {
+    background: #6b2a2a;
+}
+
+.diff-line-remove::before {
+    content: "-";
+    position: absolute;
+    left: 48px;
+    color: #f48771;
+    font-weight: bold;
+}
+
+.diff-line-context {
+    background: #1e1e1e;
+    color: #858585;
+    border-left: 3px solid transparent;
+}
+
+.diff-line-separator {
+    background: #2d2d30;
+    color: #569cd6;
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    border-top: 1px solid #3e3e42;
+    border-bottom: 1px solid #3e3e42;
+}
+
+.gsap-wp-no-diff {
+    padding: 40px 20px;
+    text-align: center;
+    color: #858585;
+}
+
+.gsap-wp-no-diff .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+    margin-bottom: 10px;
+}
+
+/* Restore Preview Modal */
+.gsap-wp-restore-preview {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.gsap-wp-restore-info {
+    background: #f0f6fc;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.gsap-wp-restore-info h4 {
+    margin: 0 0 10px 0;
+    color: #0969da;
+}
+
+.gsap-wp-restore-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.gsap-wp-restore-warning .dashicons {
+    color: #ff6b00;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Version Comparison */
+.gsap-wp-version-compare-selector {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.gsap-wp-version-compare-selector label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.gsap-wp-version-compare-selector select {
+    width: 100%;
+}
+
+.gsap-wp-version-compare-selector .button {
+    align-self: flex-end;
+    margin-bottom: 0;
 }
 
 /* ==========================================================================

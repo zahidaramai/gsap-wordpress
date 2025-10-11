@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<ruleset name="GSAP WordPress Plugin Coding Standards">
+	<description>WordPress Coding Standards configuration for GSAP for WordPress plugin</description>
+
+	<!-- Configuration -->
+	<config name="minimum_supported_wp_version" value="6.7"/>
+	<config name="testVersion" value="8.1-"/>
+	<config name="text_domain" value="gsap-for-wordpress"/>
+
+	<!-- File patterns to check -->
+	<file>.</file>
+
+	<!-- Arguments -->
+	<arg value="sp"/> <!-- Show sniff and progress -->
+	<arg name="basepath" value="./"/> <!-- Strip the file paths -->
+	<arg name="colors"/> <!-- Show colored output -->
+	<arg name="extensions" value="php"/> <!-- Only check PHP files -->
+	<arg name="parallel" value="20"/> <!-- Enable parallel processing -->
+
+	<!-- Exclude patterns -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/assets/js/*</exclude-pattern>
+	<exclude-pattern>*/languages/*</exclude-pattern>
+	<exclude-pattern>*/.git/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+
+	<!-- WordPress Core Standards -->
+	<rule ref="WordPress-Core">
+		<!-- Allow different file naming conventions for classes -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+
+		<!-- Allow Yoda conditions to be optional -->
+		<exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+	</rule>
+
+	<!-- WordPress Extra Standards (includes VIP, Security, etc) -->
+	<rule ref="WordPress-Extra">
+		<!-- Allow short array syntax -->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+
+		<!-- Allow missing translator comments (we use automation) -->
+		<exclude name="WordPress.WP.I18n.MissingTranslatorsComment"/>
+
+		<!-- Allow flexible array alignment -->
+		<exclude name="WordPress.Arrays.MultipleStatementAlignment.DoubleArrowNotAligned"/>
+		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound"/>
+	</rule>
+
+	<!-- WordPress Documentation Standards -->
+	<rule ref="WordPress-Docs">
+		<!-- Require proper function documentation -->
+		<exclude name="Squiz.Commenting.FunctionComment.MissingParamTag"/>
+	</rule>
+
+	<!-- PHP Compatibility for WordPress -->
+	<rule ref="PHPCompatibilityWP">
+		<!-- Set PHP version requirement -->
+		<config name="testVersion" value="8.1-"/>
+	</rule>
+
+	<!-- Text Domain verification -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="gsap-for-wordpress"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Global prefix for functions, classes, constants -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="gsap_wp"/>
+				<element value="GSAP_WP"/>
+				<element value="GSAP_For_WordPress"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Database table prefix -->
+	<rule ref="WordPress.DB.DirectDatabaseQuery">
+		<properties>
+			<property name="customCacheGetFunctions" type="array">
+				<element value="get_transient"/>
+			</property>
+			<property name="customCacheSetFunctions" type="array">
+				<element value="set_transient"/>
+			</property>
+			<property name="customCacheDeleteFunctions" type="array">
+				<element value="delete_transient"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- WordPress VIP Standards (Security & Performance) -->
+	<rule ref="WordPress.Security.EscapeOutput"/>
+	<rule ref="WordPress.Security.NonceVerification"/>
+	<rule ref="WordPress.Security.ValidatedSanitizedInput"/>
+
+	<!-- Enforce short array syntax (PHP 8.1+) -->
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+	<!-- Code Quality Rules -->
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+	<rule ref="Generic.Commenting.Todo"/>
+	<rule ref="Generic.PHP.DeprecatedFunctions"/>
+	<rule ref="Generic.PHP.ForbiddenFunctions"/>
+
+	<!-- Performance Rules -->
+	<rule ref="WordPress.Performance.RemoveAllActions"/>
+
+	<!-- Security Rules -->
+	<rule ref="WordPress.Security.PluginMenuSlug"/>
+	<rule ref="WordPress.Security.SafeRedirect"/>
+
+	<!-- Best Practices -->
+	<rule ref="WordPress.WP.AlternativeFunctions"/>
+	<rule ref="WordPress.WP.CapitalPDangit"/>
+	<rule ref="WordPress.WP.CronInterval">
+		<properties>
+			<property name="min_interval" value="900"/>
+		</properties>
+	</rule>
+	<rule ref="WordPress.WP.DeprecatedClasses"/>
+	<rule ref="WordPress.WP.DeprecatedFunctions"/>
+	<rule ref="WordPress.WP.DeprecatedParameters"/>
+	<rule ref="WordPress.WP.DiscouragedConstants"/>
+	<rule ref="WordPress.WP.EnqueuedResourceParameters"/>
+	<rule ref="WordPress.WP.GlobalVariablesOverride"/>
+	<rule ref="WordPress.WP.PostsPerPage"/>
+	<rule ref="WordPress.WP.TimezoneChange"/>
+
+	<!-- Encourage use of strict comparisons -->
+	<rule ref="Universal.Operators.StrictComparisons"/>
+
+	<!-- Slevomat Coding Standard (Modern PHP) -->
+	<!-- Uncomment after installing: composer require --dev slevomat/coding-standard -->
+	<!--
+	<config name="installed_paths" value="../../slevomat/coding-standard"/>
+	<rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes"/>
+	<rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHint"/>
+	<rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint"/>
+	<rule ref="SlevomatCodingStandard.TypeHints.PropertyTypeHint"/>
+	-->
+
+</ruleset>

@@ -1,9 +1,9 @@
 # GSAP for WordPress
 
-[![WordPress Plugin Version](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
-[![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
+[![WordPress Plugin Version](https://img.shields.io/badge/WordPress-6.7%2B-blue.svg)](https://wordpress.org/)
+[![PHP Version](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPL%20v2%2B-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen.svg)](https://github.com/zahidaramai/gsap-wordpress)
+[![Version](https://img.shields.io/badge/Version-1.0.2-brightgreen.svg)](https://github.com/zahidaramai/gsap-wordpress)
 
 A comprehensive WordPress plugin that integrates the powerful **GreenSock Animation Platform (GSAP)** into your WordPress website with an advanced admin interface, professional code editor with syntax highlighting, and complete version control system.
 

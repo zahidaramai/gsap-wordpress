@@ -122,6 +122,12 @@
                 }
             });
 
+            // Confirm restore button
+            $(document).on('click', '.gsap-wp-confirm-restore', function(e) {
+                e.preventDefault();
+                self.confirmRestore();
+            });
+
             // Modal close handlers
             $('.gsap-wp-modal-close, .gsap-wp-modal').on('click', function(e) {
                 if ($(e.target).hasClass('gsap-wp-modal') || $(e.target).hasClass('gsap-wp-modal-close')) {
@@ -137,55 +143,96 @@
         },
 
         /**
-         * Initialize code editor
+         * Initialize code editor with CodeMirror
          */
         initCodeEditor: function() {
             const $editor = $('#gsap-wp-code-editor');
 
-            if (!$editor.length) return;
+            if (!$editor.length || typeof wp === 'undefined' || typeof wp.codeEditor === 'undefined') {
+                return;
+            }
 
-            // Track cursor position
-            $editor.on('click keyup', this.updateCursorPosition);
+            const self = this;
 
-            // Add tab support
-            $editor.on('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    const value = this.value;
+            // Get file type from data attribute
+            const fileType = $editor.data('type') || 'javascript';
 
-                    // Insert tab
-                    this.value = value.substring(0, start) + '  ' + value.substring(end);
-                    this.selectionStart = this.selectionEnd = start + 2;
+            // CodeMirror settings based on file type
+            const editorSettings = wp.codeEditor.defaultSettings ? _.clone(wp.codeEditor.defaultSettings) : {};
+            editorSettings.codemirror = _.extend(
+                {},
+                editorSettings.codemirror || {},
+                {
+                    mode: fileType === 'css' ? 'css' : 'javascript',
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    styleActiveLine: true,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    theme: 'material-darker',
+                    indentUnit: 2,
+                    tabSize: 2,
+                    indentWithTabs: false,
+                    extraKeys: {
+                        'Ctrl-S': function() { self.saveFile(); },
+                        'Cmd-S': function() { self.saveFile(); }
+                    }
                 }
+            );
+
+            // Initialize CodeMirror
+            this.editor = wp.codeEditor.initialize($editor[0], editorSettings);
+
+            // Track changes for auto-save
+            this.editor.codemirror.on('change', function() {
+                self.hasUnsavedChanges = true;
+                self.updateStatus('modified');
+                self.scheduleAutoSave();
             });
 
-            // Syntax highlighting (basic)
-            this.applySyntaxHighlighting();
+            // Update cursor position
+            this.editor.codemirror.on('cursorActivity', function() {
+                self.updateCursorPosition();
+            });
+
+            // Initial cursor position
+            this.updateCursorPosition();
         },
 
         /**
          * Update cursor position display
          */
         updateCursorPosition: function() {
-            const $editor = $('#gsap-wp-code-editor');
-            const text = $editor.val();
-            const position = $editor[0].selectionStart;
+            if (!this.editor || !this.editor.codemirror) {
+                return;
+            }
 
-            const lines = text.substring(0, position).split('\n');
-            const line = lines.length;
-            const column = lines[lines.length - 1].length + 1;
+            const cursor = this.editor.codemirror.getCursor();
+            const line = cursor.line + 1;
+            const column = cursor.ch + 1;
 
             $('.gsap-wp-cursor-position').text('Line ' + line + ', Column ' + column);
         },
 
         /**
-         * Apply basic syntax highlighting
+         * Get editor content
          */
-        applySyntaxHighlighting: function() {
-            // This is a placeholder for future CodeMirror or Monaco integration
-            // For now, the editor uses a monospace font with dark theme
+        getEditorContent: function() {
+            if (this.editor && this.editor.codemirror) {
+                return this.editor.codemirror.getValue();
+            }
+            return $('#gsap-wp-code-editor').val();
+        },
+
+        /**
+         * Set editor content
+         */
+        setEditorContent: function(content) {
+            if (this.editor && this.editor.codemirror) {
+                this.editor.codemirror.setValue(content);
+            } else {
+                $('#gsap-wp-code-editor').val(content);
+            }
         },
 
         /**
@@ -234,7 +281,7 @@
          */
         saveFile: function(isAutoSave) {
             const self = this;
-            const content = $('#gsap-wp-code-editor').val();
+            const content = this.getEditorContent();
             const fileName = this.currentFile;
 
             if (!fileName) {
@@ -493,13 +540,64 @@
         },
 
         /**
-         * Restore version
+         * Restore version (with confirmation modal)
          */
         restoreVersion: function(versionId) {
-            if (!confirm('Are you sure you want to restore this version? Current content will be backed up.')) {
-                return;
-            }
+            const self = this;
 
+            // Load version info and diff
+            $.ajax({
+                url: gsapWpAjax.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'gsap_wp_load_version',
+                    nonce: gsapWpAjax.nonce,
+                    version_id: versionId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        self.showRestoreConfirmation(versionId, response.data);
+                    } else {
+                        self.showNotice(response.data || 'Failed to load version', 'error');
+                    }
+                },
+                error: function() {
+                    self.showNotice('An error occurred while loading version', 'error');
+                }
+            });
+        },
+
+        /**
+         * Show restore confirmation modal with diff preview
+         */
+        showRestoreConfirmation: function(versionId, versionData) {
+            const self = this;
+            const currentContent = this.getEditorContent();
+
+            // Populate version info
+            const versionInfo = `
+                <p><strong>Version:</strong> ${versionData.version_number}</p>
+                <p><strong>Created:</strong> ${versionData.created_at}</p>
+                ${versionData.user_comment ? `<p><strong>Comment:</strong> ${versionData.user_comment}</p>` : ''}
+            `;
+            $('#gsap-wp-restore-version-info').html(versionInfo);
+
+            // Generate diff between current and version content
+            const diffHtml = this.generateDiffHTML(currentContent, versionData.content);
+            $('#gsap-wp-restore-diff-preview').html(diffHtml);
+
+            // Store version ID for confirmation
+            $('#gsap-wp-restore-confirm-modal').data('version-id', versionId);
+
+            // Show modal
+            $('#gsap-wp-restore-confirm-modal').fadeIn(200);
+        },
+
+        /**
+         * Confirm and execute restore
+         */
+        confirmRestore: function() {
+            const versionId = $('#gsap-wp-restore-confirm-modal').data('version-id');
             const self = this;
 
             $.ajax({
@@ -513,6 +611,7 @@
                 success: function(response) {
                     if (response.success) {
                         self.showNotice(response.data.message || 'Version restored successfully!', 'success');
+                        $('#gsap-wp-restore-confirm-modal').fadeOut(200);
                         location.reload();
                     } else {
                         self.showNotice(response.data || 'Failed to restore version', 'error');
@@ -522,6 +621,91 @@
                     self.showNotice('An error occurred while restoring version', 'error');
                 }
             });
+        },
+
+        /**
+         * Generate HTML diff view
+         */
+        generateDiffHTML: function(oldContent, newContent) {
+            const oldLines = oldContent.split('\n');
+            const newLines = newContent.split('\n');
+            let html = '<div class="gsap-wp-diff-container">';
+
+            // Diff header
+            let additions = 0;
+            let deletions = 0;
+
+            // Simple line-by-line diff
+            const maxLines = Math.max(oldLines.length, newLines.length);
+
+            html += '<div class="gsap-wp-diff-body">';
+
+            for (let i = 0; i < maxLines; i++) {
+                const oldLine = oldLines[i] !== undefined ? oldLines[i] : null;
+                const newLine = newLines[i] !== undefined ? newLines[i] : null;
+
+                if (oldLine === newLine && oldLine !== null) {
+                    // Context line (unchanged)
+                    html += `<div class="gsap-wp-diff-line diff-line-context">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                } else if (oldLine === null) {
+                    // Addition
+                    additions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-add">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(newLine)}
+                    </div>`;
+                } else if (newLine === null) {
+                    // Deletion
+                    deletions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-remove">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                } else {
+                    // Changed line
+                    deletions++;
+                    additions++;
+                    html += `<div class="gsap-wp-diff-line diff-line-remove">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(oldLine)}
+                    </div>`;
+                    html += `<div class="gsap-wp-diff-line diff-line-add">
+                        <span class="gsap-wp-diff-line-number">${i + 1}</span>
+                        ${this.escapeHtml(newLine)}
+                    </div>`;
+                }
+            }
+
+            html += '</div>';
+
+            // Add stats
+            if (additions === 0 && deletions === 0) {
+                html = '<div class="gsap-wp-no-diff"><span class="dashicons dashicons-yes-alt"></span><p>No changes detected</p></div>';
+            } else {
+                // Prepend header with stats
+                html = `<div class="gsap-wp-diff-header">
+                    <h4>Changes Preview</h4>
+                    <div class="gsap-wp-diff-stats">
+                        <span class="additions">+${additions}</span>
+                        <span class="deletions">-${deletions}</span>
+                    </div>
+                </div>` + html;
+            }
+
+            html += '</div>';
+            return html;
+        },
+
+        /**
+         * Escape HTML
+         */
+        escapeHtml: function(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         },
 
         /**

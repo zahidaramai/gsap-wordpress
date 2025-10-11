@@ -161,7 +161,13 @@ class GSAP_WP_File_Editor {
                 <!-- Left sidebar with file tree and version history -->
                 <div class="gsap-wp-file-tree">
                     <?php $this->render_file_tree(); ?>
-                    <?php $this->render_version_history(); ?>
+                    <?php
+                    // Render full version control panel with restore buttons
+                    if (class_exists('GSAP_WP_Version_Control')) {
+                        $version_control = GSAP_WP_Version_Control::get_instance();
+                        $version_control->render_version_panel($this->current_file);
+                    }
+                    ?>
                 </div>
 
                 <!-- Main editor area -->
@@ -217,70 +223,19 @@ class GSAP_WP_File_Editor {
     }
 
     /**
-     * Render version history
+     * Render version history (DEPRECATED - replaced by GSAP_WP_Version_Control::render_version_panel)
+     *
+     * @deprecated Since version 1.0.0 - Use GSAP_WP_Version_Control::render_version_panel() instead
+     * @see GSAP_WP_Version_Control::render_version_panel()
      */
     private function render_version_history() {
-        if (!class_exists('GSAP_WP_Version_Manager')) {
-            return;
+        // This method has been replaced by the full version control panel
+        // which includes restore buttons, diff view, and delete functionality.
+        // See: admin/class-version-control.php
+        if (class_exists('GSAP_WP_Version_Control')) {
+            $version_control = GSAP_WP_Version_Control::get_instance();
+            $version_control->render_version_panel($this->current_file);
         }
-
-        $version_manager = GSAP_WP_Version_Manager::get_instance();
-        $versions = $version_manager->get_file_versions($this->current_file);
-        ?>
-        <div class="gsap-wp-version-history-section">
-            <h3>
-                <span class="dashicons dashicons-backup"></span>
-                <?php _e('Version History', 'gsap-for-wordpress'); ?>
-            </h3>
-
-            <?php if (empty($versions)): ?>
-                <p class="gsap-wp-no-versions">
-                    <?php _e('No versions saved yet.', 'gsap-for-wordpress'); ?>
-                </p>
-            <?php else: ?>
-                <ul class="gsap-wp-version-list">
-                    <?php foreach (array_slice($versions, 0, 5) as $version): ?>
-                        <li class="gsap-wp-version-item" data-version-id="<?php echo esc_attr($version->id); ?>">
-                            <button type="button" class="gsap-wp-version-link gsap-wp-view-version"
-                                    data-version-id="<?php echo esc_attr($version->id); ?>">
-                                <div class="gsap-wp-version-info">
-                                    <div class="gsap-wp-version-number">
-                                        v<?php echo esc_html($version->version_number); ?>
-                                    </div>
-                                    <div class="gsap-wp-version-date">
-                                        <?php echo esc_html(mysql2date('M j, Y g:i A', $version->created_at)); ?>
-                                    </div>
-                                    <?php if (!empty($version->user_comment)): ?>
-                                        <div class="gsap-wp-version-comment">
-                                            <?php echo esc_html($version->user_comment); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </button>
-                            <div class="gsap-wp-version-actions">
-                                <button type="button" class="button button-small gsap-wp-restore-version"
-                                        data-version-id="<?php echo esc_attr($version->id); ?>"
-                                        title="<?php esc_attr_e('Restore this version', 'gsap-for-wordpress'); ?>">
-                                    <span class="dashicons dashicons-undo"></span>
-                                    <?php _e('Restore', 'gsap-for-wordpress'); ?>
-                                </button>
-                            </div>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-
-                <?php if (count($versions) > 5): ?>
-                    <button type="button" class="button button-small gsap-wp-view-all-versions">
-                        <?php _e('View All Versions', 'gsap-for-wordpress'); ?>
-                    </button>
-                <?php endif; ?>
-            <?php endif; ?>
-
-            <button type="button" class="button button-primary gsap-wp-create-version">
-                <?php _e('Create Version', 'gsap-for-wordpress'); ?>
-            </button>
-        </div>
-        <?php
     }
 
     /**
@@ -441,6 +396,60 @@ class GSAP_WP_File_Editor {
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Diff View Modal -->
+        <div id="gsap-wp-diff-modal" class="gsap-wp-modal" style="display: none;">
+            <div class="gsap-wp-modal-content" style="max-width: 900px;">
+                <div class="gsap-wp-modal-header">
+                    <h3><?php _e('Version Comparison', 'gsap-for-wordpress'); ?></h3>
+                    <button type="button" class="gsap-wp-modal-close">&times;</button>
+                </div>
+                <div class="gsap-wp-modal-body">
+                    <div id="gsap-wp-diff-content"></div>
+                </div>
+                <div class="gsap-wp-modal-actions">
+                    <button type="button" class="button button-secondary gsap-wp-modal-close">
+                        <?php _e('Close', 'gsap-for-wordpress'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Confirmation Modal -->
+        <div id="gsap-wp-restore-confirm-modal" class="gsap-wp-modal" style="display: none;">
+            <div class="gsap-wp-modal-content">
+                <div class="gsap-wp-modal-header">
+                    <h3><?php _e('Restore Version', 'gsap-for-wordpress'); ?></h3>
+                    <button type="button" class="gsap-wp-modal-close">&times;</button>
+                </div>
+                <div class="gsap-wp-modal-body gsap-wp-restore-preview">
+                    <div class="gsap-wp-restore-info">
+                        <h4><?php _e('Version Information', 'gsap-for-wordpress'); ?></h4>
+                        <div id="gsap-wp-restore-version-info"></div>
+                    </div>
+
+                    <div class="gsap-wp-restore-warning">
+                        <span class="dashicons dashicons-warning"></span>
+                        <div>
+                            <strong><?php _e('Warning:', 'gsap-for-wordpress'); ?></strong>
+                            <?php _e('Your current content will be automatically backed up before restoring. You can always revert to it later.', 'gsap-for-wordpress'); ?>
+                        </div>
+                    </div>
+
+                    <h4><?php _e('Changes Preview:', 'gsap-for-wordpress'); ?></h4>
+                    <div id="gsap-wp-restore-diff-preview"></div>
+                </div>
+                <div class="gsap-wp-modal-actions">
+                    <button type="button" class="button button-primary gsap-wp-confirm-restore">
+                        <span class="dashicons dashicons-undo"></span>
+                        <?php _e('Restore This Version', 'gsap-for-wordpress'); ?>
+                    </button>
+                    <button type="button" class="button button-secondary gsap-wp-modal-close">
+                        <?php _e('Cancel', 'gsap-for-wordpress'); ?>
+                    </button>
                 </div>
             </div>
         </div>
@@ -770,10 +779,10 @@ document.addEventListener("DOMContentLoaded", function() {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }

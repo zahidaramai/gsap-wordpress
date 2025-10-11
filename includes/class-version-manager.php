@@ -31,6 +31,13 @@ class GSAP_WP_Version_Manager {
     private $table_name = '';
 
     /**
+     * Restore log table name
+     *
+     * @var string
+     */
+    private $restore_log_table = '';
+
+    /**
      * Maximum versions to keep per file
      *
      * @var int
@@ -55,7 +62,9 @@ class GSAP_WP_Version_Manager {
     private function __construct() {
         global $wpdb;
         $this->table_name = $wpdb->prefix . 'gsap_versions';
+        $this->restore_log_table = $wpdb->prefix . 'gsap_restore_log';
         $this->init_hooks();
+        $this->create_tables();
     }
 
     /**
@@ -67,12 +76,42 @@ class GSAP_WP_Version_Manager {
         add_action('wp_ajax_gsap_wp_restore_version', array($this, 'ajax_restore_version'));
         add_action('wp_ajax_gsap_wp_delete_version', array($this, 'ajax_delete_version'));
         add_action('wp_ajax_gsap_wp_get_version_diff', array($this, 'ajax_get_version_diff'));
+        add_action('wp_ajax_gsap_wp_get_restore_history', array($this, 'ajax_get_restore_history'));
 
         // Cleanup old versions daily
         add_action('gsap_wp_cleanup_versions', array($this, 'cleanup_old_versions'));
         if (!wp_next_scheduled('gsap_wp_cleanup_versions')) {
             wp_schedule_event(time(), 'daily', 'gsap_wp_cleanup_versions');
         }
+    }
+
+    /**
+     * Create database tables
+     */
+    private function create_tables() {
+        global $wpdb;
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        // Restore log table
+        $sql = "CREATE TABLE IF NOT EXISTS {$this->restore_log_table} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            version_id bigint(20) UNSIGNED NOT NULL,
+            file_path varchar(255) NOT NULL,
+            restored_by bigint(20) UNSIGNED NOT NULL,
+            restored_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            restore_type varchar(20) NOT NULL DEFAULT 'manual',
+            previous_version_id bigint(20) UNSIGNED NULL,
+            notes text NULL,
+            PRIMARY KEY  (id),
+            KEY version_id (version_id),
+            KEY file_path (file_path),
+            KEY restored_by (restored_by),
+            KEY restored_at (restored_at)
+        ) $charset_collate;";
+
+        dbDelta($sql);
     }
 
     /**
@@ -197,9 +236,10 @@ class GSAP_WP_Version_Manager {
      * Restore version
      *
      * @param int $version_id
+     * @param string $notes Optional notes for the restore
      * @return bool|WP_Error
      */
-    public function restore_version($version_id) {
+    public function restore_version($version_id, $notes = '') {
         $version = $this->get_version($version_id);
 
         if (!$version) {
@@ -209,10 +249,19 @@ class GSAP_WP_Version_Manager {
         // Use plugin assets directory
         $file_path = GSAP_WP_PLUGIN_PATH . 'assets/' . $version->file_path;
 
+        // Get current version ID before creating backup
+        $current_versions = $this->get_file_versions($version->file_path, 1);
+        $previous_version_id = !empty($current_versions) ? $current_versions[0]->id : null;
+
         // Create backup of current version before restoring
         if (file_exists($file_path)) {
             $current_content = file_get_contents($file_path);
-            $this->create_version($version->file_path, $current_content, __('Auto-backup before restore', 'gsap-for-wordpress'));
+            $backup_id = $this->create_version($version->file_path, $current_content, __('Auto-backup before restore', 'gsap-for-wordpress'));
+
+            // If we just created a backup, use that as the previous version
+            if (!is_wp_error($backup_id)) {
+                $previous_version_id = $backup_id;
+            }
         }
 
         // Write restored content
@@ -222,7 +271,10 @@ class GSAP_WP_Version_Manager {
             return new WP_Error('restore_failed', __('Failed to restore version.', 'gsap-for-wordpress'));
         }
 
-        // Log the action
+        // Log the restore operation to database
+        $this->create_restore_log($version_id, $version->file_path, $previous_version_id, 'manual', $notes);
+
+        // Log the action to security log
         if (class_exists('GSAP_WP_Security')) {
             GSAP_WP_Security::get_instance()->log_security_event(
                 'version_restored',
@@ -523,38 +575,76 @@ class GSAP_WP_Version_Manager {
         $lines2 = explode("\n", $content2);
 
         $diff = array();
+        $additions = 0;
+        $deletions = 0;
+        $line1_num = 1;
+        $line2_num = 1;
+
         $max_lines = max(count($lines1), count($lines2));
 
         for ($i = 0; $i < $max_lines; $i++) {
-            $line1 = isset($lines1[$i]) ? $lines1[$i] : '';
-            $line2 = isset($lines2[$i]) ? $lines2[$i] : '';
+            $line1 = isset($lines1[$i]) ? $lines1[$i] : null;
+            $line2 = isset($lines2[$i]) ? $lines2[$i] : null;
 
-            if ($line1 === $line2) {
+            if ($line1 === $line2 && $line1 !== null) {
+                // Equal lines
                 $diff[] = array(
-                    'type' => 'equal',
-                    'line1' => $line1,
-                    'line2' => $line2,
-                    'line_number' => $i + 1
+                    'type' => 'context',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => $line2_num
                 );
+                $line1_num++;
+                $line2_num++;
+            } elseif ($line1 === null && $line2 !== null) {
+                // Addition (line only in version 2)
+                $diff[] = array(
+                    'type' => 'add',
+                    'content' => $line2,
+                    'old_line' => null,
+                    'new_line' => $line2_num
+                );
+                $additions++;
+                $line2_num++;
+            } elseif ($line2 === null && $line1 !== null) {
+                // Deletion (line only in version 1)
+                $diff[] = array(
+                    'type' => 'remove',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => null
+                );
+                $deletions++;
+                $line1_num++;
             } else {
-                if (!empty($line1)) {
-                    $diff[] = array(
-                        'type' => 'delete',
-                        'line' => $line1,
-                        'line_number' => $i + 1
-                    );
-                }
-                if (!empty($line2)) {
-                    $diff[] = array(
-                        'type' => 'insert',
-                        'line' => $line2,
-                        'line_number' => $i + 1
-                    );
-                }
+                // Changed line (treat as delete + add)
+                $diff[] = array(
+                    'type' => 'remove',
+                    'content' => $line1,
+                    'old_line' => $line1_num,
+                    'new_line' => null
+                );
+                $diff[] = array(
+                    'type' => 'add',
+                    'content' => $line2,
+                    'old_line' => null,
+                    'new_line' => $line2_num
+                );
+                $deletions++;
+                $additions++;
+                $line1_num++;
+                $line2_num++;
             }
         }
 
-        return $diff;
+        return array(
+            'lines' => $diff,
+            'stats' => array(
+                'additions' => $additions,
+                'deletions' => $deletions,
+                'total_changes' => $additions + $deletions
+            )
+        );
     }
 
     /**
@@ -662,16 +752,13 @@ class GSAP_WP_Version_Manager {
 
         while ($i < count($old_lines) || $j < count($new_lines)) {
             if ($i < count($old_lines) && $j < count($new_lines) && $old_lines[$i] === $new_lines[$j]) {
-                // Lines are the same
                 $diff[] = ' ' . $old_lines[$i];
                 $i++;
                 $j++;
             } elseif ($i < count($old_lines) && ($j >= count($new_lines) || $old_lines[$i] !== $new_lines[$j])) {
-                // Line was removed
                 $diff[] = '-' . $old_lines[$i];
                 $i++;
             } else {
-                // Line was added
                 $diff[] = '+' . $new_lines[$j];
                 $j++;
             }
@@ -695,7 +782,7 @@ class GSAP_WP_Version_Manager {
         $base_index = 0;
 
         foreach ($diff_lines as $diff_line) {
-            if (empty($diff_line)) {
+            if ($diff_line === '') {
                 continue;
             }
 
@@ -704,16 +791,13 @@ class GSAP_WP_Version_Manager {
 
             switch ($operation) {
                 case ' ':
-                    // Unchanged line
                     $result[] = $line_content;
                     $base_index++;
                     break;
                 case '-':
-                    // Removed line - skip in base
                     $base_index++;
                     break;
                 case '+':
-                    // Added line
                     $result[] = $line_content;
                     break;
             }
@@ -732,7 +816,6 @@ class GSAP_WP_Version_Manager {
     private function reconstruct_content($file_path, $target_version_number) {
         global $wpdb;
 
-        // Get all versions up to target version
         $versions = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$this->table_name}
              WHERE file_path = %s AND version_number <= %d
@@ -745,20 +828,15 @@ class GSAP_WP_Version_Manager {
             return '';
         }
 
-        // Start with first version (always full content)
         $content = $versions[0]->content;
 
-        // Apply diffs sequentially
         for ($i = 1; $i < count($versions); $i++) {
             $version = $versions[$i];
-
-            // Check if version has is_diff field
-            $is_diff = isset($version->is_diff) ? $version->is_diff : 0;
+            $is_diff = isset($version->is_diff) ? (int) $version->is_diff : 0;
 
             if ($is_diff) {
                 $content = $this->apply_diff($content, $version->content);
             } else {
-                // If not a diff, use full content (backward compatibility)
                 $content = $version->content;
             }
         }
@@ -779,17 +857,108 @@ class GSAP_WP_Version_Manager {
             return new WP_Error('version_not_found', __('Version not found.', 'gsap-for-wordpress'));
         }
 
-        // Reconstruct content from version history
         return $this->reconstruct_content($version->file_path, $version->version_number);
+    }
+
+    /**
+     * Create restore log entry
+     *
+     * @param int $version_id The version that was restored
+     * @param string $file_path The file path
+     * @param int|null $previous_version_id The version that was active before restore
+     * @param string $restore_type Type of restore (manual/auto)
+     * @param string $notes Optional notes
+     * @return int|WP_Error Log ID or error
+     */
+    public function create_restore_log($version_id, $file_path, $previous_version_id = null, $restore_type = 'manual', $notes = '') {
+        global $wpdb;
+
+        $result = $wpdb->insert(
+            $this->restore_log_table,
+            array(
+                'version_id' => $version_id,
+                'file_path' => sanitize_text_field($file_path),
+                'restored_by' => get_current_user_id(),
+                'restore_type' => sanitize_text_field($restore_type),
+                'previous_version_id' => $previous_version_id,
+                'notes' => sanitize_textarea_field($notes)
+            ),
+            array('%d', '%s', '%d', '%s', '%d', '%s')
+        );
+
+        if ($result === false) {
+            return new WP_Error('log_failed', __('Failed to create restore log.', 'gsap-for-wordpress'));
+        }
+
+        return $wpdb->insert_id;
+    }
+
+    /**
+     * Get restore history for a file
+     *
+     * @param string $file_path The file path
+     * @param int $limit Number of records to retrieve
+     * @return array
+     */
+    public function get_restore_history($file_path = '', $limit = 50) {
+        global $wpdb;
+
+        $where = '';
+        $params = array();
+
+        if ($file_path !== '') {
+            $where = 'WHERE rl.file_path = %s';
+            $params[] = $file_path;
+        }
+
+        $params[] = $limit;
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT rl.*,
+                    u.display_name as restored_by_name,
+                    v.version_number as restored_version_number,
+                    v.user_comment as restored_version_comment,
+                    pv.version_number as previous_version_number
+             FROM {$this->restore_log_table} rl
+             LEFT JOIN {$wpdb->users} u ON rl.restored_by = u.ID
+             LEFT JOIN {$this->table_name} v ON rl.version_id = v.id
+             LEFT JOIN {$this->table_name} pv ON rl.previous_version_id = pv.id
+             {$where}
+             ORDER BY rl.restored_at DESC
+             LIMIT %d",
+            ...$params
+        ));
+
+        return $results ? $results : array();
+    }
+
+    /**
+     * AJAX: Get restore history
+     */
+    public function ajax_get_restore_history() {
+        if (!wp_verify_nonce($_POST['nonce'], 'gsap_wp_ajax_nonce') || !current_user_can('edit_themes')) {
+            wp_die(__('Security check failed.', 'gsap-for-wordpress'));
+        }
+
+        $file_path = isset($_POST['file_path']) ? sanitize_text_field($_POST['file_path']) : '';
+        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 50;
+
+        $history = $this->get_restore_history($file_path, $limit);
+
+        wp_send_json_success(array(
+            'history' => $history,
+            'count' => count($history)
+        ));
+    }
     }
 
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }

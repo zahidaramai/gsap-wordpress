@@ -83,23 +83,15 @@ class GSAP_WP_Settings {
         $this->library_definitions = array(
             'core' => array(
                 'title' => __('Core Libraries', 'gsap-for-wordpress'),
-                'description' => __('Essential GSAP libraries required for basic animations', 'gsap-for-wordpress'),
+                'description' => __('GSAP Core includes CSSPlugin, Tween, and Timeline automatically. You only need to enable this to start animating!', 'gsap-for-wordpress'),
                 'libraries' => array(
                     'gsap_core' => array(
                         'name' => 'GSAP Core',
                         'file' => 'gsap.min.js',
-                        'description' => __('The main GSAP animation engine (required)', 'gsap-for-wordpress'),
+                        'description' => __('Main GSAP engine (includes CSSPlugin, Tween, Timeline)', 'gsap-for-wordpress'),
                         'required' => true,
                         'free' => true,
                         'size' => '47KB'
-                    ),
-                    'css_plugin' => array(
-                        'name' => 'CSS Plugin',
-                        'file' => 'CSSPlugin.min.js',
-                        'description' => __('Enables CSS property animations (recommended)', 'gsap-for-wordpress'),
-                        'required' => false,
-                        'free' => true,
-                        'size' => '12KB'
                     )
                 )
             ),
@@ -299,15 +291,17 @@ class GSAP_WP_Settings {
         }
         ?>
         <div class="gsap-wp-settings">
-            <form method="post" action="" class="gsap-wp-settings-form">
-                <?php wp_nonce_field('gsap_wp_settings'); ?>
+            <form method="post" action="options.php" class="gsap-wp-settings-form">
+                <?php settings_fields('gsap_wp_settings_group'); ?>
+                <input type="hidden" name="option_page" value="gsap_wp_settings_group" />
+                <input type="hidden" name="action" value="update" />
 
                 <?php $this->render_library_settings(); ?>
                 <?php $this->render_performance_settings(); ?>
                 <?php $this->render_conditional_loading_settings(); ?>
 
                 <div class="gsap-wp-form-actions">
-                    <?php submit_button(__('Save Settings', 'gsap-for-wordpress'), 'primary', 'submit_settings'); ?>
+                    <?php submit_button(__('Save Settings', 'gsap-for-wordpress'), 'primary', 'submit_settings', false); ?>
                     <button type="button" class="button button-secondary" id="gsap-wp-reset-settings">
                         <?php _e('Reset to Defaults', 'gsap-for-wordpress'); ?>
                     </button>
@@ -355,8 +349,9 @@ class GSAP_WP_Settings {
      * @param array $library
      */
     private function render_library_option($library_key, $library) {
-        // Check if library is enabled in settings
+        // Check if library is enabled in settings with proper fallback
         $is_enabled = false;
+
         if (isset($this->settings['libraries'][$library_key])) {
             $is_enabled = (bool) $this->settings['libraries'][$library_key];
         }
@@ -368,6 +363,16 @@ class GSAP_WP_Settings {
         // Required libraries are always enabled
         if ($is_required) {
             $is_enabled = true;
+        }
+
+        // Debug logging in WP_DEBUG mode
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'GSAP Library %s: %s (required: %s)',
+                $library_key,
+                $is_enabled ? 'ENABLED' : 'disabled',
+                $is_required ? 'yes' : 'no'
+            ));
         }
 
         $classes = array('gsap-wp-library-option');
@@ -384,7 +389,7 @@ class GSAP_WP_Settings {
         <div class="<?php echo implode(' ', $classes); ?>">
             <label class="gsap-wp-checkbox-label">
                 <input type="checkbox"
-                       name="gsap_libraries[<?php echo esc_attr($library_key); ?>]"
+                       name="gsap_wp_settings[libraries][<?php echo esc_attr($library_key); ?>]"
                        value="1"
                        <?php checked($is_enabled, true); ?>
                        <?php disabled($is_required); ?>
@@ -444,7 +449,7 @@ class GSAP_WP_Settings {
                     <td>
                         <label>
                             <input type="checkbox"
-                                   name="performance[minified]"
+                                   name="gsap_wp_settings[performance][minified]"
                                    value="1"
                                    <?php checked(isset($performance['minified']) ? $performance['minified'] : true); ?>>
                             <?php _e('Use minified files', 'gsap-for-wordpress'); ?>
@@ -460,7 +465,7 @@ class GSAP_WP_Settings {
                     <td>
                         <label>
                             <input type="checkbox"
-                                   name="performance[load_in_footer]"
+                                   name="gsap_wp_settings[performance][load_in_footer]"
                                    value="1"
                                    <?php checked(isset($performance['load_in_footer']) ? $performance['load_in_footer'] : true); ?>>
                             <?php _e('Load scripts in footer', 'gsap-for-wordpress'); ?>
@@ -477,7 +482,7 @@ class GSAP_WP_Settings {
                         <fieldset>
                             <label>
                                 <input type="checkbox"
-                                       name="performance[auto_merge]"
+                                       name="gsap_wp_settings[performance][auto_merge]"
                                        value="1"
                                        <?php checked(isset($performance['auto_merge']) ? $performance['auto_merge'] : false); ?>>
                                 <?php _e('Auto-merge JavaScript files', 'gsap-for-wordpress'); ?>
@@ -485,7 +490,7 @@ class GSAP_WP_Settings {
 
                             <label>
                                 <input type="checkbox"
-                                       name="performance[compression]"
+                                       name="gsap_wp_settings[performance][compression]"
                                        value="1"
                                        <?php checked(isset($performance['compression']) ? $performance['compression'] : true); ?>>
                                 <?php _e('Enable compression', 'gsap-for-wordpress'); ?>
@@ -493,7 +498,7 @@ class GSAP_WP_Settings {
 
                             <label>
                                 <input type="checkbox"
-                                       name="performance[cache_busting]"
+                                       name="gsap_wp_settings[performance][cache_busting]"
                                        value="1"
                                        <?php checked(isset($performance['cache_busting']) ? $performance['cache_busting'] : true); ?>>
                                 <?php _e('Enable cache busting', 'gsap-for-wordpress'); ?>
@@ -510,7 +515,7 @@ class GSAP_WP_Settings {
                     <td>
                         <label>
                             <input type="checkbox"
-                                   name="performance[use_cdn]"
+                                   name="gsap_wp_settings[performance][use_cdn]"
                                    value="1"
                                    <?php checked(isset($performance['use_cdn']) ? $performance['use_cdn'] : false); ?>>
                             <?php _e('Load from CDN (jsDelivr)', 'gsap-for-wordpress'); ?>
@@ -543,7 +548,7 @@ class GSAP_WP_Settings {
                     <td>
                         <label>
                             <input type="checkbox"
-                                   name="conditional_loading[enabled]"
+                                   name="gsap_wp_settings[conditional_loading][enabled]"
                                    value="1"
                                    <?php checked(isset($conditional['enabled']) ? $conditional['enabled'] : false); ?>
                                    id="gsap-wp-conditional-enabled">
@@ -563,7 +568,7 @@ class GSAP_WP_Settings {
                             <?php foreach ($pages as $page): ?>
                                 <label>
                                     <input type="checkbox"
-                                           name="conditional_loading[include_pages][]"
+                                           name="gsap_wp_settings[conditional_loading][include_pages][]"
                                            value="<?php echo esc_attr($page->ID); ?>"
                                            <?php checked(in_array($page->ID, $include_pages)); ?>>
                                     <?php echo esc_html($page->post_title); ?>
@@ -587,7 +592,7 @@ class GSAP_WP_Settings {
                             <?php foreach ($post_types as $post_type): ?>
                                 <label>
                                     <input type="checkbox"
-                                           name="conditional_loading[include_post_types][]"
+                                           name="gsap_wp_settings[conditional_loading][include_post_types][]"
                                            value="<?php echo esc_attr($post_type->name); ?>"
                                            <?php checked(in_array($post_type->name, $include_post_types)); ?>>
                                     <?php echo esc_html($post_type->label); ?>
@@ -679,10 +684,10 @@ gsap.to(".scroll-element", {
     /**
      * Prevent cloning
      */
-    private function __clone() {}
+    public function __clone() {}
 
     /**
      * Prevent unserialization
      */
-    private function __wakeup() {}
+    public function __wakeup() {}
 }
